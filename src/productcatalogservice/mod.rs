@@ -36,10 +36,12 @@ impl ProductCatalogService {
     }
 
     async fn list_products(&self) -> Vec<Product> {
+        log::debug!("list_products()");
         self.data.products.clone()
     }
 
     async fn get_product(&self, id: &str) -> Product {
+        log::debug!("get_product({id:?})");
         self.data
             .products
             .iter()
@@ -50,6 +52,7 @@ impl ProductCatalogService {
     }
 
     async fn search_products(&self, query: &str) -> Vec<Product> {
+        log::debug!("search_products({query:?})");
         let query = query.to_lowercase();
         self.data
             .products

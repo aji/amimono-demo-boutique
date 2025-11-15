@@ -1,9 +1,11 @@
+use std::time::Instant;
+
 use amimono::{Binding, BindingType, Component, Runtime};
 use axum::{
     Router,
     extract::Path,
     response::Html,
-    routing::{MethodRouter, get},
+    routing::{get, post},
 };
 
 use crate::{
@@ -36,22 +38,6 @@ impl FrontendServer {
         }
     }
 
-    fn on_home(&self) -> MethodRouter<()> {
-        let data = self.data.clone();
-        get(async move || {
-            let ctx = data.home_ctx();
-            Html(templates::init().render("home", &ctx).unwrap())
-        })
-    }
-
-    fn on_product(&self) -> MethodRouter<()> {
-        let data = self.data.clone();
-        get(async move |Path(id): Path<String>| {
-            let ctx = data.product_ctx(&id).await;
-            Html(templates::init().render("product", &ctx).unwrap())
-        })
-    }
-
     async fn start(&self, rt: &Runtime) {
         let sock = match rt.binding() {
             Binding::Http(addr, _) => addr,
@@ -62,8 +48,74 @@ impl FrontendServer {
         };
 
         let app = Router::new()
-            .route("/", self.on_home())
-            .route("/product/{id}", self.on_product());
+            .route("/", {
+                get({
+                    let data = self.data.clone();
+                    async move || {
+                        let ctx = data.home_ctx().await;
+                        Html(templates::init().render("home", &ctx).unwrap())
+                    }
+                })
+            })
+            .route("/product/{id}", {
+                get({
+                    let data = self.data.clone();
+                    async move |Path(id): Path<String>| {
+                        let ctx = data.product_ctx(&id).await;
+                        Html(templates::init().render("product", &ctx).unwrap())
+                    }
+                })
+            })
+            .route("/cart", {
+                get({
+                    let _data = self.data.clone();
+                    async move || Html("<h1>TODO</h1>")
+                })
+                .post({
+                    let _data = self.data.clone();
+                    async move || Html("<h1>TODO</h1>")
+                })
+            })
+            .route("/cart/empty", {
+                post({
+                    let _data = self.data.clone();
+                    async move || Html("<h1>TODO</h1>")
+                })
+            })
+            .route("/set_currency", {
+                post({
+                    let _data = self.data.clone();
+                    async move || Html("<h1>TODO</h1>")
+                })
+            })
+            .route("/logout", {
+                post({
+                    let _data = self.data.clone();
+                    async move || Html("<h1>TODO</h1>")
+                })
+            })
+            .route("/cart/checkout", {
+                post({
+                    let _data = self.data.clone();
+                    async move || Html("<h1>TODO</h1>")
+                })
+            })
+            .layer({
+                use axum::extract::Request;
+                use axum::middleware::{self, Next};
+                middleware::from_fn(async |req: Request, next: Next| {
+                    let start = Instant::now();
+                    let prefix = format!("{} {:?}", req.method(), req.uri());
+                    let res = next.run(req).await;
+                    log::info!(
+                        "{} - {} - {}ms",
+                        prefix,
+                        res.status(),
+                        start.elapsed().as_millis()
+                    );
+                    res
+                })
+            });
 
         let listener = tokio::net::TcpListener::bind(sock).await.unwrap();
         log::info!("frontend listening on {}", sock);
@@ -88,12 +140,13 @@ impl FrontendServerData {
         templates::FooterContext {}
     }
 
-    fn home_ctx(&self) -> templates::HomeContext {
+    async fn home_ctx(&self) -> templates::HomeContext {
+        let products = self.productcatalog.list_products(&self.rt).await.unwrap();
         templates::HomeContext {
             base_url: self.base_url(),
             header: self.header_ctx(),
             footer: self.footer_ctx(),
-            products: Vec::new(),
+            products,
         }
     }
 
