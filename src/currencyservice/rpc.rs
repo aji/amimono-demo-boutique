@@ -23,8 +23,7 @@ impl Rpc for CurrencyServiceRpc {
     const LABEL: amimono::Label = "currencyservice";
 
     type Handler = Self;
-
-    type Client = RpcClient<Self>;
+    type Client = CurrencyClient;
 
     async fn start(rt: &amimono::Runtime) -> Self {
         CurrencyServiceRpc(CurrencyService::start(rt).await)
@@ -33,7 +32,6 @@ impl Rpc for CurrencyServiceRpc {
 
 impl RpcHandler for CurrencyServiceRpc {
     type Request = CurrencyServiceRequest;
-
     type Response = CurrencyServiceResponse;
 
     async fn handle(&self, rt: &amimono::Runtime, q: Self::Request) -> Self::Response {
@@ -54,10 +52,6 @@ impl RpcHandler for CurrencyServiceRpc {
 pub struct CurrencyClient(RpcClient<CurrencyServiceRpc>);
 
 impl CurrencyClient {
-    pub async fn new(rt: &Runtime) -> CurrencyClient {
-        CurrencyClient(CurrencyServiceRpc::client(rt).await)
-    }
-
     pub async fn get_supported_currencies(&self, rt: &Runtime) -> Result<Vec<String>, ()> {
         let q = CurrencyServiceRequest::GetSupportedCurrencies;
         match self.0.handle(rt, q).await {
@@ -73,6 +67,16 @@ impl CurrencyClient {
             _ => Err(()),
         }
     }
+}
+
+impl From<RpcClient<CurrencyServiceRpc>> for CurrencyClient {
+    fn from(value: RpcClient<CurrencyServiceRpc>) -> Self {
+        CurrencyClient(value)
+    }
+}
+
+pub async fn client(rt: &Runtime) -> CurrencyClient {
+    CurrencyServiceRpc::client(rt).await
 }
 
 pub fn component() -> Component {

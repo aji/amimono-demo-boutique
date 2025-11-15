@@ -24,7 +24,7 @@ impl Rpc for CartServiceRpc {
     const LABEL: amimono::Label = "cartservice";
 
     type Handler = Self;
-    type Client = RpcClient<Self>;
+    type Client = CartClient;
 
     async fn start(rt: &Runtime) -> CartServiceRpc {
         CartServiceRpc(CartService::start(rt).await)
@@ -56,10 +56,6 @@ impl RpcHandler for CartServiceRpc {
 pub struct CartClient(RpcClient<CartServiceRpc>);
 
 impl CartClient {
-    pub async fn new(rt: &Runtime) -> CartClient {
-        CartClient(CartServiceRpc::client(rt).await)
-    }
-
     pub async fn add_item(&self, rt: &Runtime, user_id: &str, item: &CartItem) -> Result<(), ()> {
         let req = CartRequest::AddItem(user_id.to_owned(), item.clone());
         match self.0.handle(rt, req).await {
@@ -83,6 +79,16 @@ impl CartClient {
             _ => Err(()),
         }
     }
+}
+
+impl From<RpcClient<CartServiceRpc>> for CartClient {
+    fn from(value: RpcClient<CartServiceRpc>) -> Self {
+        CartClient(value)
+    }
+}
+
+pub async fn client(rt: &Runtime) -> CartClient {
+    CartServiceRpc::client(rt).await
 }
 
 pub fn component() -> Component {

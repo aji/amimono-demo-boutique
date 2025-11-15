@@ -22,7 +22,7 @@ impl ShippingService {
 }
 
 pub async fn client(rt: &Runtime) -> ShippingClient {
-    rpc::ShippingClient::new(rt).await
+    rpc::client(rt).await
 }
 
 pub fn component() -> Component {

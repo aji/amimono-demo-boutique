@@ -67,7 +67,7 @@ impl Rpc for ProductCatalogService {
     const LABEL: amimono::Label = "productcatalogservice";
 
     type Handler = Self;
-    type Client = RpcClient<Self>;
+    type Client = ProductCatalogClient;
 
     async fn start(_rt: &Runtime) -> Self {
         ProductCatalogService::new().await
@@ -98,11 +98,13 @@ impl RpcHandler for ProductCatalogService {
 
 pub struct ProductCatalogClient(RpcClient<ProductCatalogService>);
 
-impl ProductCatalogClient {
-    pub async fn new(rt: &Runtime) -> ProductCatalogClient {
-        ProductCatalogClient(ProductCatalogService::client(rt).await)
+impl Clone for ProductCatalogClient {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
     }
+}
 
+impl ProductCatalogClient {
     pub async fn list_products(&self, rt: &Runtime) -> Result<Vec<Product>, ()> {
         let q = ProductCatalogRequest::ListProducts;
         match self.0.handle(rt, q).await {
@@ -130,7 +132,13 @@ impl ProductCatalogClient {
     }
 }
 
-pub async fn client(rt: &Runtime) -> RpcClient<ProductCatalogService> {
+impl From<RpcClient<ProductCatalogService>> for ProductCatalogClient {
+    fn from(value: RpcClient<ProductCatalogService>) -> Self {
+        ProductCatalogClient(value)
+    }
+}
+
+pub async fn client(rt: &Runtime) -> ProductCatalogClient {
     ProductCatalogService::client(rt).await
 }
 

@@ -2,13 +2,13 @@ use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cartservice::CartClient,
-    currencyservice::CurrencyClient,
-    emailservice::{EmailService, EmailServiceRequest},
-    paymentservice::{PaymentService, PaymentServiceRequest, PaymentServiceResponse},
-    productcatalogservice::ProductCatalogClient,
+    cartservice::{self, CartClient},
+    currencyservice::{self, CurrencyClient},
+    emailservice::{self, EmailClient, EmailServiceRequest},
+    paymentservice::{self, PaymentClient, PaymentServiceRequest, PaymentServiceResponse},
+    productcatalogservice::{self, ProductCatalogClient},
     shared::{Address, CartItem, CreditCardInfo, Money, OrderItem, OrderResult},
-    shippingservice::ShippingClient,
+    shippingservice::{self, ShippingClient},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -31,8 +31,8 @@ pub struct CheckoutService {
     cart: CartClient,
     currency: CurrencyClient,
     shipping: ShippingClient,
-    email: <EmailService as Rpc>::Client,
-    payment: <PaymentService as Rpc>::Client,
+    email: EmailClient,
+    payment: PaymentClient,
 }
 
 struct OrderPrep {
@@ -159,12 +159,12 @@ impl Rpc for CheckoutService {
 
     async fn start(rt: &Runtime) -> Self {
         CheckoutService {
-            productcatalog: ProductCatalogClient::new(rt).await,
-            cart: CartClient::new(rt).await,
-            currency: CurrencyClient::new(rt).await,
-            shipping: ShippingClient::new(rt).await,
-            email: EmailService::client(rt).await,
-            payment: PaymentService::client(rt).await,
+            productcatalog: productcatalogservice::client(rt).await,
+            cart: cartservice::client(rt).await,
+            currency: currencyservice::client(rt).await,
+            shipping: shippingservice::client(rt).await,
+            email: emailservice::client(rt).await,
+            payment: paymentservice::client(rt).await,
         }
     }
 }
@@ -223,6 +223,12 @@ impl RpcHandler for CheckoutService {
 
         CheckoutServiceResponse { order }
     }
+}
+
+pub type CheckoutClient = <CheckoutService as Rpc>::Client;
+
+pub async fn client(rt: &Runtime) -> CheckoutClient {
+    CheckoutService::client(rt).await
 }
 
 pub fn component() -> Component {

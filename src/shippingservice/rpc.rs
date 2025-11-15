@@ -31,7 +31,7 @@ impl Rpc for ShippingServiceRpc {
 
     type Handler = Self;
 
-    type Client = RpcClient<Self>;
+    type Client = ShippingClient;
 
     async fn start(rt: &Runtime) -> Self {
         ShippingServiceRpc(ShippingService::start(rt).await)
@@ -60,10 +60,6 @@ impl RpcHandler for ShippingServiceRpc {
 pub struct ShippingClient(RpcClient<ShippingServiceRpc>);
 
 impl ShippingClient {
-    pub async fn new(rt: &Runtime) -> ShippingClient {
-        ShippingClient(ShippingServiceRpc::client(rt).await)
-    }
-
     pub async fn get_quote(
         &self,
         rt: &Runtime,
@@ -95,6 +91,16 @@ impl ShippingClient {
             _ => Err(()),
         }
     }
+}
+
+impl From<RpcClient<ShippingServiceRpc>> for ShippingClient {
+    fn from(value: RpcClient<ShippingServiceRpc>) -> Self {
+        ShippingClient(value)
+    }
+}
+
+pub async fn client(rt: &Runtime) -> ShippingClient {
+    ShippingServiceRpc::client(rt).await
 }
 
 pub fn component() -> Component {

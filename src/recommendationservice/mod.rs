@@ -36,7 +36,9 @@ impl RpcHandler for RecommendationService {
     }
 }
 
-pub async fn client(rt: &Runtime) -> RpcClient<RecommendationService> {
+pub type RecommendationClient = <RecommendationService as Rpc>::Client;
+
+pub async fn client(rt: &Runtime) -> RecommendationClient {
     RecommendationService::client(rt).await
 }
 

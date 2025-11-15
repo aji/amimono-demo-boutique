@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <title>Online Boutique</title>
+</head>
+
+<body>
+  <header>
+    {{ if frontend_message }}
+    <div>{frontend_message}</div>
+    {{ endif }}
+    <div>
+      <div>
+        <a href="{base_url}/">Online Boutique</a>
+      </div>
+      <div>
+        <a href="{base_url}/cart">Cart ({cart_size})</a>
+      </div>
+    </div>
+  </header>

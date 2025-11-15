@@ -42,7 +42,9 @@ impl RpcHandler for PaymentService {
     }
 }
 
-pub async fn client(rt: &Runtime) -> RpcClient<PaymentService> {
+pub type PaymentClient = <PaymentService as Rpc>::Client;
+
+pub async fn client(rt: &Runtime) -> PaymentClient {
     PaymentService::client(rt).await
 }
 

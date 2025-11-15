@@ -45,7 +45,7 @@ impl CurrencyService {
 }
 
 pub async fn client(rt: &Runtime) -> CurrencyClient {
-    CurrencyClient::new(rt).await
+    rpc::client(rt).await
 }
 
 pub fn component() -> Component {

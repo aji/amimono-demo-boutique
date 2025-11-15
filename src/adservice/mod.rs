@@ -100,7 +100,9 @@ impl RpcHandler for AdService {
     }
 }
 
-pub async fn client(rt: &Runtime) -> RpcClient<AdService> {
+pub type AdClient = <AdService as Rpc>::Client;
+
+pub async fn client(rt: &Runtime) -> AdClient {
     AdService::client(rt).await
 }
 

@@ -30,7 +30,9 @@ impl RpcHandler for EmailService {
     }
 }
 
-pub async fn client(rt: &Runtime) -> RpcClient<EmailService> {
+pub type EmailClient = <EmailService as Rpc>::Client;
+
+pub async fn client(rt: &Runtime) -> EmailClient {
     EmailService::client(rt).await
 }
 
