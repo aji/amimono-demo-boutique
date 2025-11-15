@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::currencyservice::Money;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Product {
     pub id: String,
     pub name: String,
@@ -27,7 +28,51 @@ pub enum ProductCatalogResponse {
     SearchProducts { results: Vec<Product> },
 }
 
-pub struct ProductCatalogService;
+#[derive(Serialize, Deserialize)]
+struct ProductCatalogData {
+    products: Vec<Product>,
+}
+
+const PRODUCT_CATALOG_DATA: &'static str = include_str!("products.json");
+
+pub struct ProductCatalogService {
+    data: ProductCatalogData,
+}
+
+impl ProductCatalogService {
+    async fn new() -> ProductCatalogService {
+        ProductCatalogService {
+            data: serde_json::from_str(PRODUCT_CATALOG_DATA).unwrap(),
+        }
+    }
+
+    async fn list_products(&self) -> Vec<Product> {
+        self.data.products.clone()
+    }
+
+    async fn get_product(&self, id: &str) -> Product {
+        self.data
+            .products
+            .iter()
+            .filter(|x| x.id == id)
+            .next()
+            .expect("no such product with ID")
+            .clone()
+    }
+
+    async fn search_products(&self, query: &str) -> Vec<Product> {
+        let query = query.to_lowercase();
+        self.data
+            .products
+            .iter()
+            .filter(|x| {
+                x.name.to_lowercase().contains(&query[..])
+                    || x.description.to_lowercase().contains(&query[..])
+            })
+            .cloned()
+            .collect()
+    }
+}
 
 impl Rpc for ProductCatalogService {
     const LABEL: amimono::Label = "productcatalogservice";
@@ -37,11 +82,24 @@ impl Rpc for ProductCatalogService {
     type Response = ProductCatalogResponse;
 
     async fn start(_rt: &Runtime) -> Self {
-        ProductCatalogService
+        ProductCatalogService::new().await
     }
 
-    async fn handle(&self, _rt: &Runtime, _q: &Self::Request) -> Self::Response {
-        todo!()
+    async fn handle(&self, _rt: &Runtime, q: &Self::Request) -> Self::Response {
+        match q {
+            ProductCatalogRequest::ListProducts => {
+                let products = self.list_products().await;
+                ProductCatalogResponse::ListProducts { products }
+            }
+            ProductCatalogRequest::GetProduct { id } => {
+                let product = self.get_product(id).await;
+                ProductCatalogResponse::GetProduct { product }
+            }
+            ProductCatalogRequest::SearchProducts { query } => {
+                let results = self.search_products(query).await;
+                ProductCatalogResponse::SearchProducts { results }
+            }
+        }
     }
 }
 

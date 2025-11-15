@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fmt,
     iter::Sum,
     ops::{Add, Mul},
 };
@@ -44,6 +45,16 @@ impl Default for Money {
             units: 0,
             nanos: 0,
         }
+    }
+}
+
+impl fmt::Debug for Money {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Money({} {}.{:09})",
+            self.currency_code, self.units, self.nanos
+        )
     }
 }
 

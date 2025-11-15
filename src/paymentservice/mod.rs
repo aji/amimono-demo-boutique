@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::currencyservice::Money;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreditCardInfo {
     credit_card_number: String,
     credit_card_ccv: i32,
@@ -11,7 +11,7 @@ pub struct CreditCardInfo {
     credit_card_expiration_month: i32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum PaymentServiceRequest {
     Charge {
         amount: Money,
@@ -19,7 +19,7 @@ pub enum PaymentServiceRequest {
     },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum PaymentServiceResponse {
     Charge { transaction_id: String },
 }
@@ -36,8 +36,12 @@ impl Rpc for PaymentService {
         PaymentService
     }
 
-    async fn handle(&self, _rt: &Runtime, _q: &Self::Request) -> Self::Response {
-        todo!()
+    async fn handle(&self, _rt: &Runtime, q: &Self::Request) -> Self::Response {
+        log::info!("invoked: {:?}", q);
+        // TODO, leave this stubbed for now
+        PaymentServiceResponse::Charge {
+            transaction_id: uuid::Uuid::new_v4().to_string(),
+        }
     }
 }
 
