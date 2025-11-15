@@ -1,18 +1,7 @@
 use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
-use crate::currencyservice::Money;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Product {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub picture: String,
-    pub price_usd: Money,
-    pub categories: Vec<String>,
-}
+use crate::shared::Product;
 
 #[derive(Serialize, Deserialize)]
 pub enum ProductCatalogRequest {

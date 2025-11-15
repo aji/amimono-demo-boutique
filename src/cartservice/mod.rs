@@ -5,11 +5,7 @@ mod rpc;
 
 pub use rpc::CartClient;
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct CartItem {
-    pub product_id: String,
-    pub quantity: u32,
-}
+use crate::shared::CartItem;
 
 #[derive(Serialize, Deserialize)]
 pub struct Cart {

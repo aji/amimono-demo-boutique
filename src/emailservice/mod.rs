@@ -1,22 +1,7 @@
 use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
-use crate::{cartservice::CartItem, currencyservice::Money, shippingservice::Address};
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct OrderItem {
-    pub item: CartItem,
-    pub cost: Money,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct OrderResult {
-    pub order_id: String,
-    pub shipping_tracking_id: String,
-    pub shipping_cost: Money,
-    pub shipping_address: Address,
-    pub items: Vec<OrderItem>,
-}
+use crate::shared::OrderResult;
 
 #[derive(Serialize, Deserialize)]
 pub enum EmailServiceRequest {

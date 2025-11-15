@@ -1,15 +1,7 @@
 use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
-use crate::currencyservice::Money;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreditCardInfo {
-    credit_card_number: String,
-    credit_card_ccv: i32,
-    credit_card_expiration_year: i32,
-    credit_card_expiration_month: i32,
-}
+use crate::shared::{CreditCardInfo, Money};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum PaymentServiceRequest {

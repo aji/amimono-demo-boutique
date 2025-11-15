@@ -1,20 +1,9 @@
 use amimono::{Component, Runtime};
-use serde::{Deserialize, Serialize};
 
-use crate::{cartservice::CartItem, currencyservice::Money};
+use crate::shared::{Address, CartItem, Money};
 
 mod rpc;
-
 pub use rpc::ShippingClient;
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Address {
-    street_address: String,
-    city: String,
-    state: String,
-    country: String,
-    zip_code: i32,
-}
 
 pub(in crate::shippingservice) struct ShippingService;
 

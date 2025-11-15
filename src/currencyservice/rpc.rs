@@ -1,7 +1,9 @@
 use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
-use super::{CurrencyService, Money};
+use crate::shared::Money;
+
+use super::CurrencyService;
 
 #[derive(Serialize, Deserialize)]
 pub enum CurrencyServiceRequest {

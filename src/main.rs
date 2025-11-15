@@ -11,6 +11,8 @@ pub mod productcatalogservice;
 pub mod recommendationservice;
 pub mod shippingservice;
 
+pub mod shared;
+
 fn configure() -> AppConfig {
     AppBuilder::new()
         .add_job(

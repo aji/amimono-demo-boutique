@@ -4,6 +4,8 @@ use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 
+use crate::shared::Ad;
+
 #[derive(Serialize, Deserialize)]
 pub struct AdServiceRequest {
     context_keys: Vec<String>,
@@ -12,21 +14,6 @@ pub struct AdServiceRequest {
 #[derive(Serialize, Deserialize)]
 pub struct AdServiceResponse {
     ads: Vec<Ad>,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Ad {
-    redirect_url: String,
-    text: String,
-}
-
-impl Ad {
-    fn new<S: ToString, T: ToString>(redirect_url: S, text: T) -> Ad {
-        Ad {
-            redirect_url: redirect_url.to_string(),
-            text: text.to_string(),
-        }
-    }
 }
 
 const MAX_ADS_TO_SERVE: usize = 2;

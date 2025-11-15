@@ -2,9 +2,8 @@ use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cartservice::CartItem,
-    currencyservice::Money,
-    shippingservice::{Address, ShippingService},
+    shared::{Address, CartItem, Money},
+    shippingservice::ShippingService,
 };
 
 #[derive(Serialize, Deserialize)]

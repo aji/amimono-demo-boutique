@@ -1,7 +1,9 @@
 use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
-use super::{Cart, CartItem, CartService};
+use crate::shared::CartItem;
+
+use super::{Cart, CartService};
 
 #[derive(Serialize, Deserialize)]
 enum CartRequest {
