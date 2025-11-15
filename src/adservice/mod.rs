@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use amimono::{Component, Rpc, RpcClient, Runtime};
+use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 
@@ -81,16 +81,20 @@ impl AdService {
 impl Rpc for AdService {
     const LABEL: amimono::Label = "adservice";
 
-    type Request = AdServiceRequest;
-
-    type Response = AdServiceResponse;
+    type Handler = Self;
+    type Client = RpcClient<Self>;
 
     async fn start(_rt: &Runtime) -> Self {
         log::info!("ad service started");
         AdService::new()
     }
+}
 
-    async fn handle(&self, _rt: &Runtime, q: &Self::Request) -> Self::Response {
+impl RpcHandler for AdService {
+    type Request = AdServiceRequest;
+    type Response = AdServiceResponse;
+
+    async fn handle(&self, _rt: &Runtime, q: Self::Request) -> Self::Response {
         log::info!("received ad request (context_words={:?})", q.context_keys);
         let ads = if q.context_keys.len() > 0 {
             q.context_keys

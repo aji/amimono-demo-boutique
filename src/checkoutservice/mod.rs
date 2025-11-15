@@ -1,4 +1,4 @@
-use amimono::{Component, Rpc, RpcClient, Runtime};
+use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -32,8 +32,8 @@ pub struct CheckoutService {
     cart: CartClient,
     currency: CurrencyClient,
     shipping: ShippingClient,
-    email: RpcClient<EmailService>,
-    payment: RpcClient<PaymentService>,
+    email: <EmailService as Rpc>::Client,
+    payment: <PaymentService as Rpc>::Client,
 }
 
 struct OrderPrep {
@@ -128,7 +128,7 @@ impl CheckoutService {
             amount: amount.clone(),
             credit_card: payment_info.clone(),
         };
-        let a = self.payment.call(rt, &q).await.unwrap();
+        let a = self.payment.handle(rt, q).await.unwrap();
         let PaymentServiceResponse::Charge { transaction_id } = a;
         transaction_id
     }
@@ -143,7 +143,7 @@ impl CheckoutService {
             email: email.to_string(),
             order: order.clone(),
         };
-        self.email.call(rt, &q).await
+        self.email.handle(rt, q).await
     }
 
     async fn ship_order(&self, rt: &Runtime, address: &Address, items: &[CartItem]) -> String {
@@ -154,9 +154,9 @@ impl CheckoutService {
 impl Rpc for CheckoutService {
     const LABEL: amimono::Label = "checkoutservice";
 
-    type Request = CheckoutServiceRequest;
+    type Handler = Self;
 
-    type Response = CheckoutServiceResponse;
+    type Client = RpcClient<Self>;
 
     async fn start(rt: &Runtime) -> Self {
         CheckoutService {
@@ -168,8 +168,14 @@ impl Rpc for CheckoutService {
             payment: PaymentService::client(rt).await,
         }
     }
+}
 
-    async fn handle(&self, rt: &Runtime, q: &Self::Request) -> Self::Response {
+impl RpcHandler for CheckoutService {
+    type Request = CheckoutServiceRequest;
+
+    type Response = CheckoutServiceResponse;
+
+    async fn handle(&self, rt: &Runtime, q: Self::Request) -> Self::Response {
         log::info!(
             "[PlaceOrder] user_id={} user_currency={}",
             q.user_id,

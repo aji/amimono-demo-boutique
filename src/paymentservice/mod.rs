@@ -1,4 +1,4 @@
-use amimono::{Component, Rpc, RpcClient, Runtime};
+use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 use crate::currencyservice::Money;
@@ -29,14 +29,19 @@ pub struct PaymentService;
 impl Rpc for PaymentService {
     const LABEL: amimono::Label = "paymentservice";
 
-    type Request = PaymentServiceRequest;
-    type Response = PaymentServiceResponse;
+    type Handler = Self;
+    type Client = RpcClient<Self>;
 
     async fn start(_rt: &Runtime) -> Self {
         PaymentService
     }
+}
 
-    async fn handle(&self, _rt: &Runtime, q: &Self::Request) -> Self::Response {
+impl RpcHandler for PaymentService {
+    type Request = PaymentServiceRequest;
+    type Response = PaymentServiceResponse;
+
+    async fn handle(&self, _rt: &Runtime, q: Self::Request) -> Self::Response {
         log::info!("invoked: {:?}", q);
         // TODO, leave this stubbed for now
         PaymentServiceResponse::Charge {

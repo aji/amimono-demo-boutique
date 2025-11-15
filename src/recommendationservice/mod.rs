@@ -1,4 +1,4 @@
-use amimono::{Component, Rpc, RpcClient, Runtime};
+use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 pub struct RecommendationService;
@@ -17,15 +17,21 @@ pub struct ListRecommendationsResponse {
 impl Rpc for RecommendationService {
     const LABEL: amimono::Label = "recommendationservice";
 
-    type Request = ListRecommendationsRequest;
+    type Handler = Self;
 
-    type Response = ListRecommendationsResponse;
+    type Client = RpcClient<Self>;
 
     async fn start(_rt: &Runtime) -> Self {
         RecommendationService
     }
+}
 
-    async fn handle(&self, _rt: &Runtime, _q: &Self::Request) -> Self::Response {
+impl RpcHandler for RecommendationService {
+    type Request = ListRecommendationsRequest;
+
+    type Response = ListRecommendationsResponse;
+
+    async fn handle(&self, _rt: &Runtime, _q: Self::Request) -> Self::Response {
         todo!()
     }
 }

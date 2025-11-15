@@ -1,4 +1,4 @@
-use amimono::{Component, Rpc, RpcClient, Runtime};
+use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 use super::{CurrencyService, Money};
@@ -20,22 +20,28 @@ pub struct CurrencyServiceRpc(CurrencyService);
 impl Rpc for CurrencyServiceRpc {
     const LABEL: amimono::Label = "currencyservice";
 
-    type Request = CurrencyServiceRequest;
+    type Handler = Self;
 
-    type Response = CurrencyServiceResponse;
+    type Client = RpcClient<Self>;
 
     async fn start(rt: &amimono::Runtime) -> Self {
         CurrencyServiceRpc(CurrencyService::start(rt).await)
     }
+}
 
-    async fn handle(&self, rt: &amimono::Runtime, q: &Self::Request) -> Self::Response {
+impl RpcHandler for CurrencyServiceRpc {
+    type Request = CurrencyServiceRequest;
+
+    type Response = CurrencyServiceResponse;
+
+    async fn handle(&self, rt: &amimono::Runtime, q: Self::Request) -> Self::Response {
         match q {
             CurrencyServiceRequest::GetSupportedCurrencies => {
                 let a = self.0.get_supported_currencies(rt).await;
                 CurrencyServiceResponse::GetSupportedCurrencies(a)
             }
             CurrencyServiceRequest::Convert(from, to) => {
-                let a = self.0.convert(rt, from, to).await;
+                let a = self.0.convert(rt, &from, &to).await;
                 CurrencyServiceResponse::Convert(a)
             }
         }
@@ -52,7 +58,7 @@ impl CurrencyClient {
 
     pub async fn get_supported_currencies(&self, rt: &Runtime) -> Result<Vec<String>, ()> {
         let q = CurrencyServiceRequest::GetSupportedCurrencies;
-        match self.0.call(rt, &q).await {
+        match self.0.handle(rt, q).await {
             Ok(CurrencyServiceResponse::GetSupportedCurrencies(a)) => Ok(a),
             _ => Err(()),
         }
@@ -60,7 +66,7 @@ impl CurrencyClient {
 
     pub async fn convert(&self, rt: &Runtime, from: &Money, to: &str) -> Result<Money, ()> {
         let q = CurrencyServiceRequest::Convert(from.clone(), to.to_owned());
-        match self.0.call(rt, &q).await {
+        match self.0.handle(rt, q).await {
             Ok(CurrencyServiceResponse::Convert(a)) => Ok(a),
             _ => Err(()),
         }

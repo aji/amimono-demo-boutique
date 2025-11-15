@@ -1,4 +1,4 @@
-use amimono::{Component, Rpc, RpcClient, Runtime};
+use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 use super::{Cart, CartItem, CartService};
@@ -21,18 +21,22 @@ struct CartServiceRpc(CartService);
 impl Rpc for CartServiceRpc {
     const LABEL: amimono::Label = "cartservice";
 
-    type Request = CartRequest;
-
-    type Response = CartResponse;
+    type Handler = Self;
+    type Client = RpcClient<Self>;
 
     async fn start(rt: &Runtime) -> CartServiceRpc {
         CartServiceRpc(CartService::start(rt).await)
     }
+}
 
-    async fn handle(&self, rt: &Runtime, q: &Self::Request) -> Self::Response {
+impl RpcHandler for CartServiceRpc {
+    type Request = CartRequest;
+    type Response = CartResponse;
+
+    async fn handle(&self, rt: &Runtime, q: Self::Request) -> Self::Response {
         match q {
             CartRequest::AddItem(user_id, item) => {
-                self.0.add_item(rt, user_id.as_str(), item).await;
+                self.0.add_item(rt, user_id.as_str(), &item).await;
                 CartResponse::Empty
             }
             CartRequest::GetCart(user_id) => {
@@ -56,7 +60,7 @@ impl CartClient {
 
     pub async fn add_item(&self, rt: &Runtime, user_id: &str, item: &CartItem) -> Result<(), ()> {
         let req = CartRequest::AddItem(user_id.to_owned(), item.clone());
-        match self.0.call(rt, &req).await {
+        match self.0.handle(rt, req).await {
             Ok(CartResponse::Empty) => Ok(()),
             _ => Err(()),
         }
@@ -64,7 +68,7 @@ impl CartClient {
 
     pub async fn get_cart(&self, rt: &Runtime, user_id: &str) -> Result<Cart, ()> {
         let req = CartRequest::GetCart(user_id.to_owned());
-        match self.0.call(rt, &req).await {
+        match self.0.handle(rt, req).await {
             Ok(CartResponse::Cart(cart)) => Ok(cart),
             _ => Err(()),
         }
@@ -72,7 +76,7 @@ impl CartClient {
 
     pub async fn empty_cart(&self, rt: &Runtime, user_id: &str) -> Result<(), ()> {
         let req = CartRequest::EmptyCart(user_id.to_owned());
-        match self.0.call(rt, &req).await {
+        match self.0.handle(rt, req).await {
             Ok(CartResponse::Empty) => Ok(()),
             _ => Err(()),
         }

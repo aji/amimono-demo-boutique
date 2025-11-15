@@ -1,4 +1,4 @@
-use amimono::{Component, Rpc, RpcClient, Runtime};
+use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -30,22 +30,28 @@ struct ShippingServiceRpc(ShippingService);
 impl Rpc for ShippingServiceRpc {
     const LABEL: amimono::Label = "shippingservice";
 
-    type Request = ShippingRequest;
+    type Handler = Self;
 
-    type Response = ShippingResponse;
+    type Client = RpcClient<Self>;
 
     async fn start(rt: &Runtime) -> Self {
         ShippingServiceRpc(ShippingService::start(rt).await)
     }
+}
 
-    async fn handle(&self, rt: &amimono::Runtime, q: &Self::Request) -> Self::Response {
+impl RpcHandler for ShippingServiceRpc {
+    type Request = ShippingRequest;
+
+    type Response = ShippingResponse;
+
+    async fn handle(&self, rt: &amimono::Runtime, q: Self::Request) -> Self::Response {
         match q {
             ShippingRequest::GetQuote { address, items } => {
-                let a = self.0.get_quote(rt, address, items.as_slice()).await;
+                let a = self.0.get_quote(rt, &address, items.as_slice()).await;
                 ShippingResponse::GetQuote(a)
             }
             ShippingRequest::ShipOrder { address, items } => {
-                let a = self.0.ship_order(rt, address, items.as_slice()).await;
+                let a = self.0.ship_order(rt, &address, items.as_slice()).await;
                 ShippingResponse::ShipOrder(a)
             }
         }
@@ -69,7 +75,7 @@ impl ShippingClient {
             address: address.clone(),
             items: items.to_vec(),
         };
-        match self.0.call(rt, &q).await {
+        match self.0.handle(rt, q).await {
             Ok(ShippingResponse::GetQuote(cost)) => Ok(cost),
             _ => Err(()),
         }
@@ -85,7 +91,7 @@ impl ShippingClient {
             address: address.clone(),
             items: items.to_vec(),
         };
-        match self.0.call(rt, &q).await {
+        match self.0.handle(rt, q).await {
             Ok(ShippingResponse::ShipOrder(tracking_id)) => Ok(tracking_id),
             _ => Err(()),
         }

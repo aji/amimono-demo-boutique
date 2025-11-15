@@ -1,4 +1,4 @@
-use amimono::{Component, Rpc, RpcClient, Runtime};
+use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
 use serde::{Deserialize, Serialize};
 
 use crate::{cartservice::CartItem, currencyservice::Money, shippingservice::Address};
@@ -28,14 +28,19 @@ pub struct EmailService;
 impl Rpc for EmailService {
     const LABEL: amimono::Label = "emailservice";
 
-    type Request = EmailServiceRequest;
-    type Response = ();
+    type Handler = Self;
+    type Client = RpcClient<Self>;
 
     async fn start(_rt: &Runtime) -> Self {
         EmailService
     }
+}
 
-    async fn handle(&self, _rt: &Runtime, _q: &Self::Request) -> Self::Response {
+impl RpcHandler for EmailService {
+    type Request = EmailServiceRequest;
+    type Response = ();
+
+    async fn handle(&self, _rt: &Runtime, _q: Self::Request) -> Self::Response {
         todo!()
     }
 }
