@@ -35,6 +35,7 @@ dependencies = [
  "axum",
  "env_logger",
  "log",
+ "rand",
  "serde",
  "tokio",
 ]
