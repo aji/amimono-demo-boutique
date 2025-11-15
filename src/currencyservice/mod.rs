@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     iter::Sum,
     ops::{Add, Mul},
 };
@@ -15,6 +16,25 @@ pub struct Money {
     pub currency_code: String,
     pub units: i64,
     pub nanos: i32,
+}
+
+impl Money {
+    fn normalize(self) -> Money {
+        Money {
+            currency_code: self.currency_code,
+            units: self.units + (self.nanos / 1_000_000_000) as i64,
+            nanos: self.nanos % 1_000_000_000,
+        }
+    }
+
+    pub fn from_usd(dollars: i64, cents: i32) -> Money {
+        let res = Money {
+            currency_code: "USD".to_owned(),
+            units: dollars,
+            nanos: cents * 10_000_000,
+        };
+        res.normalize()
+    }
 }
 
 impl Default for Money {
@@ -36,13 +56,12 @@ impl Add<Money> for Money {
                 self.currency_code, rhs.currency_code
             );
         }
-        let units = self.units + rhs.units;
-        let nanos = self.nanos + rhs.nanos;
-        Money {
+        let res = Money {
             currency_code: self.currency_code,
-            units: units + (nanos / 1_000_000_000) as i64,
-            nanos: nanos % 1_000_000_000,
-        }
+            units: self.units + rhs.units,
+            nanos: self.nanos + rhs.nanos,
+        };
+        res.normalize()
     }
 }
 
@@ -62,33 +81,46 @@ impl Sum<Money> for Money {
 impl Mul<Money> for u32 {
     type Output = Money;
     fn mul(self, rhs: Money) -> Self::Output {
-        let nanos = (self as i32) * rhs.nanos;
-        let units = (self as i64) * rhs.units;
-        Money {
+        let res = Money {
             currency_code: rhs.currency_code,
-            units: units + (nanos / 1_000_000_000) as i64,
-            nanos: nanos % 1_000_000_000,
-        }
+            units: (self as i64) * rhs.units,
+            nanos: (self as i32) * rhs.nanos,
+        };
+        res.normalize()
     }
 }
 
 pub(in crate::currencyservice) struct CurrencyService {
-    supported_currencies: Vec<String>,
+    conversion: HashMap<String, f64>,
 }
+
+const CURRENCY_CONVERSION_DATA: &'static str = include_str!("conversion.json");
 
 impl CurrencyService {
     async fn start(_rt: &Runtime) -> CurrencyService {
         CurrencyService {
-            supported_currencies: vec!["USD".to_owned(), "JPY".to_owned(), "EUR".to_owned()],
+            conversion: serde_json::from_str(CURRENCY_CONVERSION_DATA).unwrap(),
         }
     }
 
     async fn get_supported_currencies(&self, _rt: &Runtime) -> Vec<String> {
-        self.supported_currencies.clone()
+        self.conversion.keys().cloned().collect()
     }
 
-    async fn convert(&self, _rt: &Runtime, _from: &Money, _to: &str) -> Money {
-        todo!()
+    async fn convert(&self, _rt: &Runtime, from: &Money, to: &str) -> Money {
+        let from_per_euro = self.conversion.get(&from.currency_code).unwrap();
+        let to_per_euro = self.conversion.get(to).unwrap();
+
+        let to_per_from = to_per_euro / from_per_euro;
+
+        let to_units = (from.units as f64 * to_per_from) as i64;
+        let to_nanos = (from.nanos as f64 * to_per_from) as i32;
+
+        Money {
+            currency_code: to.to_owned(),
+            units: to_units + (to_nanos / 1_000_000_000) as i64,
+            nanos: to_nanos % 1_000_000_000,
+        }
     }
 }
 
