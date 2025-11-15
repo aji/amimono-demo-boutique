@@ -54,24 +54,24 @@ impl CartClient {
         CartClient(CartServiceRpc::client(rt).await)
     }
 
-    pub async fn add_item(&self, rt: &Runtime, user_id: String, item: CartItem) -> Result<(), ()> {
-        let req = CartRequest::AddItem(user_id, item);
+    pub async fn add_item(&self, rt: &Runtime, user_id: &str, item: &CartItem) -> Result<(), ()> {
+        let req = CartRequest::AddItem(user_id.to_owned(), item.clone());
         match self.0.call(rt, &req).await {
             Ok(CartResponse::Empty) => Ok(()),
             _ => Err(()),
         }
     }
 
-    pub async fn get_cart(&self, rt: &Runtime, user_id: String) -> Result<Cart, ()> {
-        let req = CartRequest::GetCart(user_id);
+    pub async fn get_cart(&self, rt: &Runtime, user_id: &str) -> Result<Cart, ()> {
+        let req = CartRequest::GetCart(user_id.to_owned());
         match self.0.call(rt, &req).await {
             Ok(CartResponse::Cart(cart)) => Ok(cart),
             _ => Err(()),
         }
     }
 
-    pub async fn empty_cart(&self, rt: &Runtime, user_id: String) -> Result<(), ()> {
-        let req = CartRequest::EmptyCart(user_id);
+    pub async fn empty_cart(&self, rt: &Runtime, user_id: &str) -> Result<(), ()> {
+        let req = CartRequest::EmptyCart(user_id.to_owned());
         match self.0.call(rt, &req).await {
             Ok(CartResponse::Empty) => Ok(()),
             _ => Err(()),

@@ -45,6 +45,40 @@ impl Rpc for ProductCatalogService {
     }
 }
 
+pub struct ProductCatalogClient(RpcClient<ProductCatalogService>);
+
+impl ProductCatalogClient {
+    pub async fn new(rt: &Runtime) -> ProductCatalogClient {
+        ProductCatalogClient(ProductCatalogService::client(rt).await)
+    }
+
+    pub async fn list_products(&self, rt: &Runtime) -> Result<Vec<Product>, ()> {
+        let q = ProductCatalogRequest::ListProducts;
+        match self.0.call(rt, &q).await {
+            Ok(ProductCatalogResponse::ListProducts { products }) => Ok(products),
+            _ => Err(()),
+        }
+    }
+
+    pub async fn get_product(&self, rt: &Runtime, id: &str) -> Result<Product, ()> {
+        let q = ProductCatalogRequest::GetProduct { id: id.to_string() };
+        match self.0.call(rt, &q).await {
+            Ok(ProductCatalogResponse::GetProduct { product }) => Ok(product),
+            _ => Err(()),
+        }
+    }
+
+    pub async fn search_products(&self, rt: &Runtime, query: &str) -> Result<Vec<Product>, ()> {
+        let q = ProductCatalogRequest::SearchProducts {
+            query: query.to_string(),
+        };
+        match self.0.call(rt, &q).await {
+            Ok(ProductCatalogResponse::SearchProducts { results }) => Ok(results),
+            _ => Err(()),
+        }
+    }
+}
+
 pub async fn client(rt: &Runtime) -> RpcClient<ProductCatalogService> {
     ProductCatalogService::client(rt).await
 }

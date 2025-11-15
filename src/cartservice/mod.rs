@@ -7,14 +7,14 @@ pub use rpc::CartClient;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CartItem {
-    product_id: String,
-    quantity: u32,
+    pub product_id: String,
+    pub quantity: u32,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Cart {
-    user_id: String,
-    items: Vec<CartItem>,
+    pub user_id: String,
+    pub items: Vec<CartItem>,
 }
 
 pub(in crate::cartservice) struct CartService;

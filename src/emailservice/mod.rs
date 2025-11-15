@@ -3,19 +3,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::{cartservice::CartItem, currencyservice::Money, shippingservice::Address};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct OrderItem {
-    item: CartItem,
-    cost: Money,
+    pub item: CartItem,
+    pub cost: Money,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct OrderResult {
-    order_id: String,
-    shipping_tracking_id: String,
-    shipping_cost: Money,
-    shipping_address: Address,
-    items: Vec<OrderItem>,
+    pub order_id: String,
+    pub shipping_tracking_id: String,
+    pub shipping_cost: Money,
+    pub shipping_address: Address,
+    pub items: Vec<OrderItem>,
 }
 
 #[derive(Serialize, Deserialize)]

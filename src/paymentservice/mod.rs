@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::currencyservice::Money;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CreditCardInfo {
     credit_card_number: String,
     credit_card_ccv: i32,
