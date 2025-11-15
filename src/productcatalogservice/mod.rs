@@ -41,9 +41,9 @@ pub struct ProductCatalogService {
 
 impl ProductCatalogService {
     async fn new() -> ProductCatalogService {
-        ProductCatalogService {
-            data: serde_json::from_str(PRODUCT_CATALOG_DATA).unwrap(),
-        }
+        let data: ProductCatalogData = serde_json::from_str(PRODUCT_CATALOG_DATA).unwrap();
+        log::debug!("catalog loaded: {:?}", data.products);
+        ProductCatalogService { data }
     }
 
     async fn list_products(&self) -> Vec<Product> {
