@@ -1,0 +1,12 @@
+[package]
+name = "amimono-demo-boutique"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+amimono = { path = "../amimono/amimono", version = "0.1.0" }
+axum = "0.8.7"
+env_logger = "0.11.8"
+log = "0.4.28"
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = "1.48.0"

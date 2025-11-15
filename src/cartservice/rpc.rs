@@ -1,0 +1,84 @@
+use amimono::{Component, Rpc, RpcClient, Runtime};
+use serde::{Deserialize, Serialize};
+
+use super::{Cart, CartItem, CartService};
+
+#[derive(Serialize, Deserialize)]
+enum CartRequest {
+    AddItem(String, CartItem),
+    GetCart(String),
+    EmptyCart(String),
+}
+
+#[derive(Serialize, Deserialize)]
+enum CartResponse {
+    Empty,
+    Cart(Cart),
+}
+
+struct CartServiceRpc(CartService);
+
+impl Rpc for CartServiceRpc {
+    const LABEL: amimono::Label = "cartservice";
+
+    type Request = CartRequest;
+
+    type Response = CartResponse;
+
+    async fn start(rt: &Runtime) -> CartServiceRpc {
+        CartServiceRpc(CartService::start(rt).await)
+    }
+
+    async fn handle(&self, rt: &Runtime, q: &Self::Request) -> Self::Response {
+        match q {
+            CartRequest::AddItem(user_id, item) => {
+                self.0.add_item(rt, user_id.as_str(), item).await;
+                CartResponse::Empty
+            }
+            CartRequest::GetCart(user_id) => {
+                let cart = self.0.get_cart(rt, user_id.as_str()).await;
+                CartResponse::Cart(cart)
+            }
+            CartRequest::EmptyCart(user_id) => {
+                self.0.empty_cart(rt, user_id.as_str()).await;
+                CartResponse::Empty
+            }
+        }
+    }
+}
+
+pub struct CartClient(RpcClient<CartServiceRpc>);
+
+impl CartClient {
+    pub async fn new(rt: &Runtime) -> CartClient {
+        CartClient(CartServiceRpc::client(rt).await)
+    }
+
+    pub async fn add_item(&self, rt: &Runtime, user_id: String, item: CartItem) -> Result<(), ()> {
+        let req = CartRequest::AddItem(user_id, item);
+        match self.0.call(rt, &req).await {
+            Ok(CartResponse::Empty) => Ok(()),
+            _ => Err(()),
+        }
+    }
+
+    pub async fn get_cart(&self, rt: &Runtime, user_id: String) -> Result<Cart, ()> {
+        let req = CartRequest::GetCart(user_id);
+        match self.0.call(rt, &req).await {
+            Ok(CartResponse::Cart(cart)) => Ok(cart),
+            _ => Err(()),
+        }
+    }
+
+    pub async fn empty_cart(&self, rt: &Runtime, user_id: String) -> Result<(), ()> {
+        let req = CartRequest::EmptyCart(user_id);
+        match self.0.call(rt, &req).await {
+            Ok(CartResponse::Empty) => Ok(()),
+            _ => Err(()),
+        }
+    }
+}
+
+pub fn component() -> Component {
+    CartServiceRpc::component()
+}
