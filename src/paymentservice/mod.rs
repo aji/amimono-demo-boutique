@@ -1,53 +1,38 @@
-use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
-use serde::{Deserialize, Serialize};
+use amimono::{Component, Runtime};
 
 use crate::shared::{CreditCardInfo, Money};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum PaymentServiceRequest {
-    Charge {
-        amount: Money,
-        credit_card: CreditCardInfo,
-    },
-}
+mod ops {
+    use crate::shared::{CreditCardInfo, Money};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum PaymentServiceResponse {
-    Charge { transaction_id: String },
+    amimono::rpc_ops! {
+        fn charge(amount: Money, credit_card: CreditCardInfo) -> String;
+    }
 }
 
 pub struct PaymentService;
 
-impl Rpc for PaymentService {
+impl ops::Handler for PaymentService {
     const LABEL: amimono::Label = "paymentservice";
 
-    type Handler = Self;
-    type Client = RpcClient<Self>;
-
-    async fn start(_rt: &Runtime) -> Self {
+    async fn new(_rt: &Runtime) -> Self {
         PaymentService
     }
-}
 
-impl RpcHandler for PaymentService {
-    type Request = PaymentServiceRequest;
-    type Response = PaymentServiceResponse;
-
-    async fn handle(&self, _rt: &Runtime, q: Self::Request) -> Self::Response {
-        log::info!("invoked: {:?}", q);
+    async fn charge(
+        &self,
+        _rt: &amimono::Runtime,
+        amount: Money,
+        credit_card: CreditCardInfo,
+    ) -> String {
+        log::info!("charge {:?} with {:?}", credit_card, amount);
         // TODO, leave this stubbed for now
-        PaymentServiceResponse::Charge {
-            transaction_id: uuid::Uuid::new_v4().to_string(),
-        }
+        uuid::Uuid::new_v4().to_string()
     }
 }
 
-pub type PaymentClient = <PaymentService as Rpc>::Client;
-
-pub async fn client(rt: &Runtime) -> PaymentClient {
-    PaymentService::client(rt).await
-}
+pub type PaymentClient = ops::RpcClient<PaymentService>;
 
 pub fn component() -> Component {
-    PaymentService::component()
+    ops::component::<PaymentService>()
 }

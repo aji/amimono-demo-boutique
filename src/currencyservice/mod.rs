@@ -2,20 +2,27 @@ use std::collections::HashMap;
 
 use amimono::{Component, Runtime};
 
-mod rpc;
-
-pub use rpc::CurrencyClient;
-
 use crate::shared::Money;
 
-pub(in crate::currencyservice) struct CurrencyService {
+mod ops {
+    use crate::shared::Money;
+
+    amimono::rpc_ops! {
+        fn get_supported_currencies() -> Vec<String>;
+        fn convert(from: Money, to: String) -> Money;
+    }
+}
+
+pub struct CurrencyService {
     conversion: HashMap<String, f64>,
 }
 
 const CURRENCY_CONVERSION_DATA: &'static str = include_str!("conversion.json");
 
-impl CurrencyService {
-    async fn start(_rt: &Runtime) -> CurrencyService {
+impl ops::Handler for CurrencyService {
+    const LABEL: amimono::Label = "currencyservice";
+
+    async fn new(_rt: &Runtime) -> CurrencyService {
         let service = CurrencyService {
             conversion: serde_json::from_str(CURRENCY_CONVERSION_DATA).unwrap(),
         };
@@ -27,9 +34,9 @@ impl CurrencyService {
         self.conversion.keys().cloned().collect()
     }
 
-    async fn convert(&self, _rt: &Runtime, from: &Money, to: &str) -> Money {
+    async fn convert(&self, _rt: &Runtime, from: Money, to: String) -> Money {
         let from_per_euro = self.conversion.get(&from.currency_code).unwrap();
-        let to_per_euro = self.conversion.get(to).unwrap();
+        let to_per_euro = self.conversion.get(&to).unwrap();
 
         let to_per_from = to_per_euro / from_per_euro;
 
@@ -44,10 +51,8 @@ impl CurrencyService {
     }
 }
 
-pub async fn client(rt: &Runtime) -> CurrencyClient {
-    rpc::client(rt).await
-}
+pub type CurrencyClient = ops::RpcClient<CurrencyService>;
 
 pub fn component() -> Component {
-    rpc::component()
+    ops::component::<CurrencyService>()
 }

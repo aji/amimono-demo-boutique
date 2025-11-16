@@ -1,19 +1,16 @@
 use std::collections::HashMap;
 
-use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
+use amimono::{Component, Runtime};
 use rand::seq::IndexedRandom;
-use serde::{Deserialize, Serialize};
 
 use crate::shared::Ad;
 
-#[derive(Serialize, Deserialize)]
-pub struct AdServiceRequest {
-    context_keys: Vec<String>,
-}
+mod ops {
+    use crate::shared::Ad;
 
-#[derive(Serialize, Deserialize)]
-pub struct AdServiceResponse {
-    ads: Vec<Ad>,
+    amimono::rpc_ops! {
+        fn get_ads(context_keys: Vec<String>) -> Vec<Ad>;
+    }
 }
 
 const MAX_ADS_TO_SERVE: usize = 2;
@@ -65,26 +62,17 @@ impl AdService {
     }
 }
 
-impl Rpc for AdService {
+impl ops::Handler for AdService {
     const LABEL: amimono::Label = "adservice";
 
-    type Handler = Self;
-    type Client = RpcClient<Self>;
-
-    async fn start(_rt: &Runtime) -> Self {
-        log::info!("ad service started");
+    async fn new(_rt: &Runtime) -> Self {
         AdService::new()
     }
-}
 
-impl RpcHandler for AdService {
-    type Request = AdServiceRequest;
-    type Response = AdServiceResponse;
-
-    async fn handle(&self, _rt: &Runtime, q: Self::Request) -> Self::Response {
-        log::info!("received ad request (context_words={:?})", q.context_keys);
-        let ads = if q.context_keys.len() > 0 {
-            q.context_keys
+    async fn get_ads(&self, _rt: &Runtime, context_keys: Vec<String>) -> Vec<Ad> {
+        log::info!("received ad request (context_words={:?})", context_keys);
+        let ads = if context_keys.len() > 0 {
+            context_keys
                 .iter()
                 .flat_map(|k| self.get_ads_by_category(k).into_iter())
                 .collect()
@@ -96,16 +84,12 @@ impl RpcHandler for AdService {
         } else {
             ads
         };
-        AdServiceResponse { ads }
+        ads
     }
 }
 
-pub type AdClient = <AdService as Rpc>::Client;
-
-pub async fn client(rt: &Runtime) -> AdClient {
-    AdService::client(rt).await
-}
+pub type AdClient = ops::RpcClient<AdService>;
 
 pub fn component() -> Component {
-    AdService::component()
+    ops::component::<AdService>()
 }

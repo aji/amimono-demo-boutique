@@ -1,21 +1,7 @@
-use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
+use amimono::{Component, Runtime};
 use serde::{Deserialize, Serialize};
 
 use crate::shared::Product;
-
-#[derive(Serialize, Deserialize)]
-pub enum ProductCatalogRequest {
-    ListProducts,
-    GetProduct { id: String },
-    SearchProducts { query: String },
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum ProductCatalogResponse {
-    ListProducts { products: Vec<Product> },
-    GetProduct { product: Product },
-    SearchProducts { results: Vec<Product> },
-}
 
 #[derive(Serialize, Deserialize)]
 struct ProductCatalogData {
@@ -24,23 +10,35 @@ struct ProductCatalogData {
 
 const PRODUCT_CATALOG_DATA: &'static str = include_str!("products.json");
 
+mod ops {
+    use crate::shared::Product;
+
+    amimono::rpc_ops! {
+        fn list_products() -> Vec<Product>;
+        fn get_product(id: String) -> Product;
+        fn search_products(query: String) -> Vec<Product>;
+    }
+}
+
 pub struct ProductCatalogService {
     data: ProductCatalogData,
 }
 
-impl ProductCatalogService {
-    async fn new() -> ProductCatalogService {
+impl ops::Handler for ProductCatalogService {
+    const LABEL: amimono::Label = "productcatalog";
+
+    async fn new(_rt: &Runtime) -> ProductCatalogService {
         let data: ProductCatalogData = serde_json::from_str(PRODUCT_CATALOG_DATA).unwrap();
         log::debug!("catalog loaded: {:?}", data.products);
         ProductCatalogService { data }
     }
 
-    async fn list_products(&self) -> Vec<Product> {
+    async fn list_products(&self, _rt: &Runtime) -> Vec<Product> {
         log::debug!("list_products()");
         self.data.products.clone()
     }
 
-    async fn get_product(&self, id: &str) -> Product {
+    async fn get_product(&self, _rt: &Runtime, id: String) -> Product {
         log::debug!("get_product({id:?})");
         self.data
             .products
@@ -51,7 +49,7 @@ impl ProductCatalogService {
             .clone()
     }
 
-    async fn search_products(&self, query: &str) -> Vec<Product> {
+    async fn search_products(&self, _rt: &Runtime, query: String) -> Vec<Product> {
         log::debug!("search_products({query:?})");
         let query = query.to_lowercase();
         self.data
@@ -66,85 +64,8 @@ impl ProductCatalogService {
     }
 }
 
-impl Rpc for ProductCatalogService {
-    const LABEL: amimono::Label = "productcatalogservice";
-
-    type Handler = Self;
-    type Client = ProductCatalogClient;
-
-    async fn start(_rt: &Runtime) -> Self {
-        ProductCatalogService::new().await
-    }
-}
-
-impl RpcHandler for ProductCatalogService {
-    type Request = ProductCatalogRequest;
-    type Response = ProductCatalogResponse;
-
-    async fn handle(&self, _rt: &Runtime, q: Self::Request) -> Self::Response {
-        match q {
-            ProductCatalogRequest::ListProducts => {
-                let products = self.list_products().await;
-                ProductCatalogResponse::ListProducts { products }
-            }
-            ProductCatalogRequest::GetProduct { id } => {
-                let product = self.get_product(&id).await;
-                ProductCatalogResponse::GetProduct { product }
-            }
-            ProductCatalogRequest::SearchProducts { query } => {
-                let results = self.search_products(&query).await;
-                ProductCatalogResponse::SearchProducts { results }
-            }
-        }
-    }
-}
-
-pub struct ProductCatalogClient(RpcClient<ProductCatalogService>);
-
-impl Clone for ProductCatalogClient {
-    fn clone(&self) -> Self {
-        Self(self.0.clone())
-    }
-}
-
-impl ProductCatalogClient {
-    pub async fn list_products(&self, rt: &Runtime) -> Result<Vec<Product>, ()> {
-        let q = ProductCatalogRequest::ListProducts;
-        match self.0.handle(rt, q).await {
-            Ok(ProductCatalogResponse::ListProducts { products }) => Ok(products),
-            _ => Err(()),
-        }
-    }
-
-    pub async fn get_product(&self, rt: &Runtime, id: &str) -> Result<Product, ()> {
-        let q = ProductCatalogRequest::GetProduct { id: id.to_string() };
-        match self.0.handle(rt, q).await {
-            Ok(ProductCatalogResponse::GetProduct { product }) => Ok(product),
-            _ => Err(()),
-        }
-    }
-
-    pub async fn search_products(&self, rt: &Runtime, query: &str) -> Result<Vec<Product>, ()> {
-        let q = ProductCatalogRequest::SearchProducts {
-            query: query.to_string(),
-        };
-        match self.0.handle(rt, q).await {
-            Ok(ProductCatalogResponse::SearchProducts { results }) => Ok(results),
-            _ => Err(()),
-        }
-    }
-}
-
-impl From<RpcClient<ProductCatalogService>> for ProductCatalogClient {
-    fn from(value: RpcClient<ProductCatalogService>) -> Self {
-        ProductCatalogClient(value)
-    }
-}
-
-pub async fn client(rt: &Runtime) -> ProductCatalogClient {
-    ProductCatalogService::client(rt).await
-}
+pub type ProductCatalogClient = ops::RpcClient<ProductCatalogService>;
 
 pub fn component() -> Component {
-    ProductCatalogService::component()
+    ops::component::<ProductCatalogService>()
 }

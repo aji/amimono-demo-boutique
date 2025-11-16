@@ -1,47 +1,33 @@
-use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
-use serde::{Deserialize, Serialize};
+use amimono::{Component, Runtime};
+
+mod ops {
+    amimono::rpc_ops! {
+        fn list_recommendations(user_id: String, product_ids: Vec<String>) -> Vec<String>;
+    }
+}
 
 pub struct RecommendationService;
 
-#[derive(Serialize, Deserialize)]
-pub struct ListRecommendationsRequest {
-    pub user_id: String,
-    pub product_ids: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ListRecommendationsResponse {
-    pub product_ids: Vec<String>,
-}
-
-impl Rpc for RecommendationService {
+impl ops::Handler for RecommendationService {
     const LABEL: amimono::Label = "recommendationservice";
 
-    type Handler = Self;
-
-    type Client = RpcClient<Self>;
-
-    async fn start(_rt: &Runtime) -> Self {
+    async fn new(_rt: &Runtime) -> Self {
         RecommendationService
     }
-}
 
-impl RpcHandler for RecommendationService {
-    type Request = ListRecommendationsRequest;
-
-    type Response = ListRecommendationsResponse;
-
-    async fn handle(&self, _rt: &Runtime, _q: Self::Request) -> Self::Response {
-        todo!()
+    async fn list_recommendations(
+        &self,
+        _rt: &amimono::Runtime,
+        _user_id: String,
+        _product_ids: Vec<String>,
+    ) -> Vec<String> {
+        // TODO
+        vec![]
     }
 }
 
-pub type RecommendationClient = <RecommendationService as Rpc>::Client;
-
-pub async fn client(rt: &Runtime) -> RecommendationClient {
-    RecommendationService::client(rt).await
-}
+pub type RecommendationClient = ops::RpcClient<RecommendationService>;
 
 pub fn component() -> Component {
-    RecommendationService::component()
+    ops::component::<RecommendationService>()
 }

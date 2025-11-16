@@ -1,41 +1,36 @@
-use amimono::{Component, Rpc, RpcClient, RpcHandler, Runtime};
-use serde::{Deserialize, Serialize};
+use amimono::{Component, Runtime};
 
 use crate::shared::OrderResult;
 
-#[derive(Serialize, Deserialize)]
-pub enum EmailServiceRequest {
-    SendOrderConfirmation { email: String, order: OrderResult },
+mod ops {
+    use crate::shared::OrderResult;
+
+    amimono::rpc_ops! {
+        fn send_order_confirmation(email: String, order: OrderResult) -> ();
+    }
 }
 
 pub struct EmailService;
 
-impl Rpc for EmailService {
+impl ops::Handler for EmailService {
     const LABEL: amimono::Label = "emailservice";
 
-    type Handler = Self;
-    type Client = RpcClient<Self>;
-
-    async fn start(_rt: &Runtime) -> Self {
+    async fn new(_rt: &Runtime) -> Self {
         EmailService
     }
-}
 
-impl RpcHandler for EmailService {
-    type Request = EmailServiceRequest;
-    type Response = ();
-
-    async fn handle(&self, _rt: &Runtime, _q: Self::Request) -> Self::Response {
+    async fn send_order_confirmation(
+        &self,
+        _rt: &amimono::Runtime,
+        _email: String,
+        _order: OrderResult,
+    ) -> () {
         todo!()
     }
 }
 
-pub type EmailClient = <EmailService as Rpc>::Client;
-
-pub async fn client(rt: &Runtime) -> EmailClient {
-    EmailService::client(rt).await
-}
+pub type EmailClient = ops::RpcClient<EmailService>;
 
 pub fn component() -> Component {
-    EmailService::component()
+    ops::component::<EmailService>()
 }

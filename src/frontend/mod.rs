@@ -8,10 +8,7 @@ use axum::{
     routing::{get, post},
 };
 
-use crate::{
-    currencyservice::{self, CurrencyClient},
-    productcatalogservice::{self, ProductCatalogClient},
-};
+use crate::{currencyservice::CurrencyClient, productcatalogservice::ProductCatalogClient};
 
 mod templates;
 
@@ -32,8 +29,8 @@ impl FrontendServer {
         FrontendServer {
             data: FrontendServerData {
                 rt: rt.clone(),
-                currency: currencyservice::client(rt).await,
-                productcatalog: productcatalogservice::client(rt).await,
+                currency: CurrencyClient::new(rt).await,
+                productcatalog: ProductCatalogClient::new(rt).await,
             },
         }
     }
@@ -151,7 +148,11 @@ impl FrontendServerData {
     }
 
     async fn product_ctx(&self, id: &str) -> templates::ProductContext {
-        let product = self.productcatalog.get_product(&self.rt, id).await.unwrap();
+        let product = self
+            .productcatalog
+            .get_product(&self.rt, id.to_string())
+            .await
+            .unwrap();
         templates::ProductContext {
             header: self.header_ctx(),
             footer: self.footer_ctx(),
