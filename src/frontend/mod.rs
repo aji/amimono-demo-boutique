@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{net::SocketAddr, time::Instant};
 
 use amimono::{Binding, BindingType, Component, Runtime};
 use axum::{
@@ -27,6 +27,8 @@ struct FrontendServer {
 #[allow(unused)]
 struct FrontendServerData {
     rt: Runtime,
+    sock_addr: SocketAddr,
+    base_url: String,
     ad: AdClient,
     cart: CartClient,
     checkout: CheckoutClient,
@@ -38,9 +40,19 @@ struct FrontendServerData {
 
 impl FrontendServer {
     async fn new(rt: &Runtime) -> FrontendServer {
+        let (sock_addr, base_url) = match rt.binding() {
+            Binding::Http(sock_addr, base_url) => (sock_addr.clone(), base_url.clone()),
+            binding => {
+                log::error!("got {:?} instead of an Http binding, cannot start", binding);
+                panic!();
+            }
+        };
+
         FrontendServer {
             data: FrontendServerData {
                 rt: rt.clone(),
+                sock_addr,
+                base_url,
                 ad: AdClient::new(rt).await,
                 cart: CartClient::new(rt).await,
                 checkout: CheckoutClient::new(rt).await,
@@ -52,15 +64,7 @@ impl FrontendServer {
         }
     }
 
-    async fn start(&self, rt: &Runtime) {
-        let sock = match rt.binding() {
-            Binding::Http(addr, _) => addr,
-            binding => {
-                log::error!("got {:?} instead of an Http binding, cannot start", binding);
-                return;
-            }
-        };
-
+    async fn start(&self, _rt: &Runtime) {
         let app = Router::new()
             .route("/", {
                 get({
@@ -71,6 +75,7 @@ impl FrontendServer {
                     }
                 })
             })
+            .nest_service("/static", tower_http::services::ServeDir::new("static"))
             .route("/product/{id}", {
                 get({
                     let data = self.data.clone();
@@ -137,17 +142,15 @@ impl FrontendServer {
                 })
             });
 
-        let listener = tokio::net::TcpListener::bind(sock).await.unwrap();
-        log::info!("frontend listening on http://{}", sock);
+        let listener = tokio::net::TcpListener::bind(self.data.sock_addr)
+            .await
+            .unwrap();
+        log::info!("frontend listening on {}", self.data.base_url);
         axum::serve(listener, app).await.unwrap();
     }
 }
 
 impl FrontendServerData {
-    fn base_url(&self) -> String {
-        "".to_string()
-    }
-
     fn get_or_set_user_id(&self, jar: CookieJar) -> (CookieJar, String) {
         let key = "BOUTIQUE_USER_ID";
         let value = jar.get(key).map(|x| x.value().to_string());
@@ -160,49 +163,51 @@ impl FrontendServerData {
         }
     }
 
-    fn header_ctx(&self) -> templates::HeaderContext {
+    async fn header_ctx(&'_ self) -> templates::HeaderContext<'_> {
         templates::HeaderContext {
-            base_url: self.base_url(),
-            frontend_message: None,
+            base_url: self.base_url.as_str(),
             cart_size: 0,
         }
     }
 
-    fn footer_ctx(&self) -> templates::FooterContext {
-        templates::FooterContext {}
+    async fn footer_ctx(&'_ self) -> templates::FooterContext<'_> {
+        templates::FooterContext {
+            base_url: self.base_url.as_str(),
+        }
     }
 
-    async fn home_ctx(&self) -> templates::HomeContext {
+    async fn home_ctx(&'_ self) -> templates::HomeContext<'_> {
         let products = self.productcatalog.list_products(&self.rt).await.unwrap();
         templates::HomeContext {
-            base_url: self.base_url(),
-            header: self.header_ctx(),
-            footer: self.footer_ctx(),
+            header: self.header_ctx().await,
+            footer: self.footer_ctx().await,
+            base_url: self.base_url.as_str(),
             products,
         }
     }
 
-    async fn product_ctx(&self, id: &str) -> templates::ProductContext {
+    async fn product_ctx(&'_ self, id: &str) -> templates::ProductContext<'_> {
         let product = self
             .productcatalog
             .get_product(&self.rt, id.to_string())
             .await
             .unwrap();
         templates::ProductContext {
-            header: self.header_ctx(),
-            footer: self.footer_ctx(),
-            base_url: self.base_url(),
+            header: self.header_ctx().await,
+            footer: self.footer_ctx().await,
+            base_url: self.base_url.as_str(),
             product,
         }
     }
 
-    async fn cart_ctx(&self, jar: CookieJar) -> (CookieJar, templates::CartContext) {
+    async fn cart_ctx(&'_ self, jar: CookieJar) -> (CookieJar, templates::CartContext<'_>) {
         let (jar, user_id) = self.get_or_set_user_id(jar);
         log::info!("loading cart for {}", user_id);
         let cart = self.cart.get_cart(&self.rt, user_id).await.unwrap();
         let ctx = templates::CartContext {
-            header: self.header_ctx(),
-            footer: self.footer_ctx(),
+            header: self.header_ctx().await,
+            footer: self.footer_ctx().await,
+            base_url: self.base_url.as_str(),
             items: cart.items,
         };
         (jar, ctx)

@@ -11,35 +11,37 @@ const HOME_TEMPLATE: &'static str = include_str!("home.html");
 const PRODUCT_TEMPLATE: &'static str = include_str!("product.html");
 
 #[derive(Serialize)]
-pub struct HeaderContext {
-    pub base_url: String,
-    pub frontend_message: Option<String>,
+pub struct HeaderContext<'svc> {
+    pub base_url: &'svc str,
     pub cart_size: usize,
 }
 
 #[derive(Serialize)]
-pub struct FooterContext {}
+pub struct FooterContext<'svc> {
+    pub base_url: &'svc str,
+}
 
 #[derive(Serialize)]
-pub struct HomeContext {
-    pub base_url: String,
-    pub header: HeaderContext,
-    pub footer: FooterContext,
+pub struct HomeContext<'svc> {
+    pub header: HeaderContext<'svc>,
+    pub footer: FooterContext<'svc>,
+    pub base_url: &'svc str,
     pub products: Vec<Product>,
 }
 
 #[derive(Serialize)]
-pub struct ProductContext {
-    pub header: HeaderContext,
-    pub footer: FooterContext,
-    pub base_url: String,
+pub struct ProductContext<'svc> {
+    pub header: HeaderContext<'svc>,
+    pub footer: FooterContext<'svc>,
+    pub base_url: &'svc str,
     pub product: Product,
 }
 
 #[derive(Serialize)]
-pub struct CartContext {
-    pub header: HeaderContext,
-    pub footer: FooterContext,
+pub struct CartContext<'svc> {
+    pub header: HeaderContext<'svc>,
+    pub footer: FooterContext<'svc>,
+    pub base_url: &'svc str,
     pub items: Vec<CartItem>,
 }
 
