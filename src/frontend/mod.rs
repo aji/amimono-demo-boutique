@@ -103,8 +103,12 @@ impl FrontendServer {
             })
             .route("/cart/empty", {
                 post({
-                    let _data = self.data.clone();
-                    async move || Html("<h1>TODO</h1>")
+                    let data = self.data.clone();
+                    async move |jar: CookieJar| {
+                        let (jar, user_id) = data.get_or_set_user_id(jar);
+                        data.cart.empty_cart(&data.rt, user_id).await.unwrap();
+                        (jar, Redirect::to("/cart"))
+                    }
                 })
             })
             .route("/set_currency", {
@@ -166,7 +170,6 @@ impl FrontendServerData {
     async fn header_ctx(&'_ self) -> templates::HeaderContext<'_> {
         templates::HeaderContext {
             base_url: self.base_url.as_str(),
-            cart_size: 0,
         }
     }
 

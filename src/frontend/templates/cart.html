@@ -4,13 +4,16 @@
   <h2>Cart</h2>
 
   {{ if items }}
-  <p>Items:
   <ul>
     {{ for item in items }}
     <li>{item.product_id} x{item.quantity}</li>
     {{ endfor }}
   </ul>
-  </p>
+  <div>
+    <form method="POST" action="{base_url}/cart/empty">
+      <button type="submit">Empty cart</button>
+    </form>
+  </div>
   {{ else }}
   <p>Your cart is empty!</p>
   {{ endif }}

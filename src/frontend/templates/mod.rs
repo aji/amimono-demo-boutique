@@ -13,7 +13,6 @@ const PRODUCT_TEMPLATE: &'static str = include_str!("product.html");
 #[derive(Serialize)]
 pub struct HeaderContext<'svc> {
     pub base_url: &'svc str,
-    pub cart_size: usize,
 }
 
 #[derive(Serialize)]
