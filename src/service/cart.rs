@@ -13,7 +13,8 @@ pub struct Cart {
 }
 
 mod ops {
-    use crate::{cartservice::Cart, shared::CartItem};
+    use super::Cart;
+    use crate::shared::CartItem;
 
     amimono::rpc_ops! {
         fn add_item(user_id: String, item: CartItem) -> ();

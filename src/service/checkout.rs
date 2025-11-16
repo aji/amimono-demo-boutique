@@ -1,13 +1,11 @@
 use amimono::{Component, RpcError, Runtime};
 
 use crate::{
-    cartservice::CartClient,
-    currencyservice::CurrencyClient,
-    emailservice::EmailClient,
-    paymentservice::PaymentClient,
-    productcatalogservice::ProductCatalogClient,
+    service::{
+        CartClient, CurrencyClient, EmailClient, PaymentClient, ProductCatalogClient,
+        ShippingClient,
+    },
     shared::{Address, CartItem, CreditCardInfo, Money, OrderItem, OrderResult},
-    shippingservice::ShippingClient,
 };
 
 mod ops {

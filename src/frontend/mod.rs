@@ -8,7 +8,7 @@ use axum::{
     routing::{get, post},
 };
 
-use crate::{currencyservice::CurrencyClient, productcatalogservice::ProductCatalogClient};
+use crate::service::{CurrencyClient, ProductCatalogClient};
 
 mod templates;
 

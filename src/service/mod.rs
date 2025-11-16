@@ -1,0 +1,19 @@
+pub mod ad;
+pub mod cart;
+pub mod checkout;
+pub mod currency;
+pub mod email;
+pub mod payment;
+pub mod productcatalog;
+pub mod recommendation;
+pub mod shipping;
+
+pub use ad::AdClient;
+pub use cart::CartClient;
+pub use checkout::CheckoutClient;
+pub use currency::CurrencyClient;
+pub use email::EmailClient;
+pub use payment::PaymentClient;
+pub use productcatalog::ProductCatalogClient;
+pub use recommendation::RecommendationClient;
+pub use shipping::ShippingClient;
