@@ -1,7 +1,7 @@
 use amimono::{Component, RpcError, Runtime};
 
 use crate::{
-    service::{
+    backend::{
         CartClient, CurrencyClient, EmailClient, PaymentClient, ProductCatalogClient,
         ShippingClient,
     },
