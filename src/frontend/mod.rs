@@ -2,13 +2,20 @@ use std::time::Instant;
 
 use amimono::{Binding, BindingType, Component, Runtime};
 use axum::{
-    Router,
+    Form, Router,
     extract::Path,
-    response::Html,
+    response::{Html, Redirect},
     routing::{get, post},
 };
+use axum_extra::extract::{CookieJar, cookie::Cookie};
 
-use crate::backend::{CurrencyClient, ProductCatalogClient};
+use crate::{
+    backend::{
+        AdClient, CartClient, CheckoutClient, CurrencyClient, ProductCatalogClient,
+        RecommendationClient, ShippingClient,
+    },
+    shared::CartItem,
+};
 
 mod templates;
 
@@ -17,11 +24,16 @@ struct FrontendServer {
 }
 
 #[derive(Clone)]
+#[allow(unused)]
 struct FrontendServerData {
     rt: Runtime,
-    #[allow(unused)]
+    ad: AdClient,
+    cart: CartClient,
+    checkout: CheckoutClient,
     currency: CurrencyClient,
     productcatalog: ProductCatalogClient,
+    shipping: ShippingClient,
+    recommendation: RecommendationClient,
 }
 
 impl FrontendServer {
@@ -29,8 +41,13 @@ impl FrontendServer {
         FrontendServer {
             data: FrontendServerData {
                 rt: rt.clone(),
+                ad: AdClient::new(rt).await,
+                cart: CartClient::new(rt).await,
+                checkout: CheckoutClient::new(rt).await,
                 currency: CurrencyClient::new(rt).await,
                 productcatalog: ProductCatalogClient::new(rt).await,
+                shipping: ShippingClient::new(rt).await,
+                recommendation: RecommendationClient::new(rt).await,
             },
         }
     }
@@ -65,12 +82,18 @@ impl FrontendServer {
             })
             .route("/cart", {
                 get({
-                    let _data = self.data.clone();
-                    async move || Html("<h1>TODO</h1>")
+                    let data = self.data.clone();
+                    async move |jar: CookieJar| {
+                        let (jar, ctx) = data.cart_ctx(jar).await;
+                        (jar, Html(templates::init().render("cart", &ctx).unwrap()))
+                    }
                 })
                 .post({
-                    let _data = self.data.clone();
-                    async move || Html("<h1>TODO</h1>")
+                    let data = self.data.clone();
+                    async move |jar: CookieJar, Form(form): Form<templates::CartForm>| {
+                        let jar = data.cart_form(jar, form).await;
+                        (jar, Redirect::to("/cart"))
+                    }
                 })
             })
             .route("/cart/empty", {
@@ -115,7 +138,7 @@ impl FrontendServer {
             });
 
         let listener = tokio::net::TcpListener::bind(sock).await.unwrap();
-        log::info!("frontend listening on {}", sock);
+        log::info!("frontend listening on http://{}", sock);
         axum::serve(listener, app).await.unwrap();
     }
 }
@@ -123,6 +146,18 @@ impl FrontendServer {
 impl FrontendServerData {
     fn base_url(&self) -> String {
         "".to_string()
+    }
+
+    fn get_or_set_user_id(&self, jar: CookieJar) -> (CookieJar, String) {
+        let key = "BOUTIQUE_USER_ID";
+        let value = jar.get(key).map(|x| x.value().to_string());
+        match value {
+            Some(x) => (jar, x),
+            None => {
+                let id = uuid::Uuid::new_v4().to_string();
+                (jar.add(Cookie::new(key, id.clone())), id)
+            }
+        }
     }
 
     fn header_ctx(&self) -> templates::HeaderContext {
@@ -156,8 +191,31 @@ impl FrontendServerData {
         templates::ProductContext {
             header: self.header_ctx(),
             footer: self.footer_ctx(),
+            base_url: self.base_url(),
             product,
         }
+    }
+
+    async fn cart_ctx(&self, jar: CookieJar) -> (CookieJar, templates::CartContext) {
+        let (jar, user_id) = self.get_or_set_user_id(jar);
+        log::info!("loading cart for {}", user_id);
+        let cart = self.cart.get_cart(&self.rt, user_id).await.unwrap();
+        let ctx = templates::CartContext {
+            header: self.header_ctx(),
+            footer: self.footer_ctx(),
+            items: cart.items,
+        };
+        (jar, ctx)
+    }
+
+    async fn cart_form(&self, jar: CookieJar, form: templates::CartForm) -> CookieJar {
+        let (jar, user_id) = self.get_or_set_user_id(jar);
+        let item = CartItem {
+            product_id: form.product_id,
+            quantity: form.quantity,
+        };
+        self.cart.add_item(&self.rt, user_id, item).await.unwrap();
+        jar
     }
 }
 

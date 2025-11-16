@@ -1,0 +1,19 @@
+{{ call header with header }}
+
+<main>
+  <h2>Cart</h2>
+
+  {{ if items }}
+  <p>Items:
+  <ul>
+    {{ for item in items }}
+    <li>{item.product_id} x{item.quantity}</li>
+    {{ endfor }}
+  </ul>
+  </p>
+  {{ else }}
+  <p>Your cart is empty!</p>
+  {{ endif }}
+</main>
+
+{{ call footer with footer }}

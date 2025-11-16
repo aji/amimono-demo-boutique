@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use crate::shared::Money;
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Ad {
     pub redirect_url: String,
     pub text: String,
@@ -19,7 +18,6 @@ impl Ad {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Address {
     pub street_address: String,
     pub city: String,
@@ -29,14 +27,12 @@ pub struct Address {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct CartItem {
     pub product_id: String,
     pub quantity: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct CreditCardInfo {
     pub credit_card_number: String,
     pub credit_card_ccv: i32,
@@ -45,14 +41,12 @@ pub struct CreditCardInfo {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct OrderItem {
     pub item: CartItem,
     pub cost: Money,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct OrderResult {
     pub order_id: String,
     pub shipping_tracking_id: String,
@@ -62,7 +56,6 @@ pub struct OrderResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Product {
     pub id: String,
     pub name: String,

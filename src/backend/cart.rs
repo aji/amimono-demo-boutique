@@ -37,6 +37,7 @@ impl ops::Handler for CartService {
     }
 
     async fn add_item(&self, _rt: &Runtime, user_id: String, item: CartItem) -> () {
+        log::info!("add_item({}, {})", user_id, item.product_id);
         self.carts
             .lock()
             .await
@@ -46,6 +47,7 @@ impl ops::Handler for CartService {
     }
 
     async fn get_cart(&self, _rt: &Runtime, user_id: String) -> Cart {
+        log::info!("get_cart({})", user_id);
         let items = self
             .carts
             .lock()
@@ -60,6 +62,7 @@ impl ops::Handler for CartService {
     }
 
     async fn empty_cart(&self, _rt: &Runtime, user_id: String) -> () {
+        log::info!("empty_cart({})", user_id);
         self.carts.lock().await.remove(&user_id);
     }
 }

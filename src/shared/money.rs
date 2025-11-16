@@ -7,7 +7,6 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Money {
     pub currency_code: String,
     pub units: i64,

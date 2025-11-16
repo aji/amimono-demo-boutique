@@ -8,15 +8,15 @@
 
 <body>
   <header>
-    {{ if frontendMessage }}
-    <div>{frontendMessage}</div>
+    {{ if frontend_message }}
+    <div>{frontend_message}</div>
     {{ endif }}
     <div>
       <div>
-        <a href="{baseUrl}/">Online Boutique</a>
+        <a href="{base_url}/">Online Boutique</a>
       </div>
       <div>
-        <a href="{baseUrl}/cart">Cart ({cartSize})</a>
+        <a href="{base_url}/cart">Cart ({cart_size})</a>
       </div>
     </div>
   </header>

@@ -2,7 +2,12 @@
 
 <main>
   <h2>{product.name}</h2>
-  <p>Price: {product.priceUsd | money}</p>
+  <p>Price: {product.price_usd | money}</p>
+  <form method="POST" action="{base_url}/cart">
+    <input type="hidden" name="product_id" value="{product.id}" />
+    <input type="hidden" name="quantity" value="1" />
+    <button type="submit">Add to cart</button>
+  </form>
 </main>
 
 {{ call footer with footer }}
