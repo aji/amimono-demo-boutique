@@ -1,9 +1,9 @@
-use std::{
-    net::{Ipv4Addr, SocketAddr},
-    time::Instant,
-};
+use std::{net::SocketAddr, time::Instant};
 
-use amimono::config::{BindingType, ComponentConfig};
+use amimono::{
+    config::{Binding, BindingType, ComponentConfig},
+    runtime,
+};
 use axum::{
     Form, Router,
     extract::Path,
@@ -43,10 +43,10 @@ struct FrontendServerData {
 impl FrontendServer {
     async fn new() -> FrontendServer {
         // TODO: this
-        let (sock_addr, base_url) = (
-            (Ipv4Addr::LOCALHOST, 9000).into(),
-            "http://localhost:9000".to_string(),
-        );
+        let (sock_addr, base_url) = match runtime::binding::<Self>() {
+            Some(Binding::Http(sock, url)) => (sock, url),
+            _ => panic!("FrontendServer does not have a binding"),
+        };
 
         FrontendServer {
             data: FrontendServerData {
@@ -232,11 +232,15 @@ async fn frontend_main() {
     server.start().await
 }
 
+impl runtime::Component for FrontendServer {
+    type Instance = ();
+}
+
 pub fn component() -> ComponentConfig {
     ComponentConfig {
         label: "frontend".to_string(),
         binding: BindingType::Http,
-        register: |_, _| (),
+        register: |reg, label| reg.register::<FrontendServer>(label, ()),
         entry: frontend_main,
     }
 }
