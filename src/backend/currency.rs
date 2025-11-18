@@ -20,7 +20,7 @@ pub struct CurrencyService {
 const CURRENCY_CONVERSION_DATA: &'static str = include_str!("conversion.json");
 
 impl ops::Handler for CurrencyService {
-    fn new() -> CurrencyService {
+    async fn new() -> CurrencyService {
         let service = CurrencyService {
             conversion: serde_json::from_str(CURRENCY_CONVERSION_DATA).unwrap(),
         };

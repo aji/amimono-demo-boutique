@@ -127,7 +127,7 @@ impl CheckoutService {
 }
 
 impl ops::Handler for CheckoutService {
-    fn new() -> Self {
+    async fn new() -> Self {
         CheckoutService {
             productcatalog: ProductCatalogClient::new(),
             cart: CartClient::new(),

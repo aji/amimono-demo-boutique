@@ -28,7 +28,7 @@ pub struct CartService {
 }
 
 impl ops::Handler for CartService {
-    fn new() -> CartService {
+    async fn new() -> CartService {
         CartService {
             carts: Arc::new(Mutex::new(HashMap::new())),
         }

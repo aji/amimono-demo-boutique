@@ -13,7 +13,7 @@ mod ops {
 pub struct PaymentService;
 
 impl ops::Handler for PaymentService {
-    fn new() -> Self {
+    async fn new() -> Self {
         PaymentService
     }
 

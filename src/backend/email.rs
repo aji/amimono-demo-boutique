@@ -13,7 +13,7 @@ mod ops {
 pub struct EmailService;
 
 impl ops::Handler for EmailService {
-    fn new() -> Self {
+    async fn new() -> Self {
         EmailService
     }
 

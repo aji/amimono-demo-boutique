@@ -9,7 +9,7 @@ mod ops {
 pub struct RecommendationService;
 
 impl ops::Handler for RecommendationService {
-    fn new() -> Self {
+    async fn new() -> Self {
         RecommendationService
     }
 

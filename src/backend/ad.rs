@@ -63,7 +63,7 @@ impl AdService {
 }
 
 impl ops::Handler for AdService {
-    fn new() -> Self {
+    async fn new() -> Self {
         AdService::new()
     }
 

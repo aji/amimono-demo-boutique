@@ -14,7 +14,7 @@ mod ops {
 pub struct ShippingService;
 
 impl ops::Handler for ShippingService {
-    fn new() -> Self {
+    async fn new() -> Self {
         ShippingService
     }
 

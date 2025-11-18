@@ -25,7 +25,7 @@ pub struct ProductCatalogService {
 }
 
 impl ops::Handler for ProductCatalogService {
-    fn new() -> ProductCatalogService {
+    async fn new() -> ProductCatalogService {
         let data: ProductCatalogData = serde_json::from_str(PRODUCT_CATALOG_DATA).unwrap();
         log::debug!("catalog loaded: {:?}", data.products);
         ProductCatalogService { data }
