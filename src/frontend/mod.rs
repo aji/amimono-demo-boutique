@@ -2,7 +2,7 @@ use std::{net::SocketAddr, time::Instant};
 
 use amimono::{
     config::{Binding, BindingType, ComponentConfig},
-    runtime,
+    runtime::{self, Component},
 };
 use axum::{
     Form, Router,
@@ -42,9 +42,8 @@ struct FrontendServerData {
 
 impl FrontendServer {
     async fn new() -> FrontendServer {
-        // TODO: this
         let (sock_addr, base_url) = match runtime::binding::<Self>() {
-            Some(Binding::Http(sock, url)) => (sock, url),
+            Binding::Http(sock, url) => (sock, url),
             _ => panic!("FrontendServer does not have a binding"),
         };
 
@@ -239,8 +238,8 @@ impl runtime::Component for FrontendServer {
 pub fn component() -> ComponentConfig {
     ComponentConfig {
         label: "frontend".to_string(),
+        id: FrontendServer::id(),
         binding: BindingType::Http,
-        register: |reg, label| reg.register::<FrontendServer>(label, ()),
         entry: frontend_main,
     }
 }
