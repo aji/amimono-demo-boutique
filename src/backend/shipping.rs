@@ -1,4 +1,4 @@
-use amimono::{Component, Runtime};
+use amimono::config::ComponentConfig;
 
 use crate::shared::{Address, CartItem, Money};
 
@@ -14,23 +14,21 @@ mod ops {
 pub struct ShippingService;
 
 impl ops::Handler for ShippingService {
-    const LABEL: amimono::Label = "shippingservice";
-
-    async fn new(_rt: &Runtime) -> Self {
+    fn new() -> Self {
         ShippingService
     }
 
-    async fn get_quote(&self, _rt: &Runtime, _address: Address, _items: Vec<CartItem>) -> Money {
+    async fn get_quote(&self, _address: Address, _items: Vec<CartItem>) -> Money {
         todo!()
     }
 
-    async fn ship_order(&self, _rt: &Runtime, _address: Address, _items: Vec<CartItem>) -> String {
+    async fn ship_order(&self, _address: Address, _items: Vec<CartItem>) -> String {
         todo!()
     }
 }
 
-pub type ShippingClient = ops::RpcClient<ShippingService>;
+pub type ShippingClient = ops::Client<ShippingService>;
 
-pub fn component() -> Component {
-    ops::component::<ShippingService>()
+pub fn component() -> ComponentConfig {
+    ops::component::<ShippingService>("shippingservice".to_string())
 }

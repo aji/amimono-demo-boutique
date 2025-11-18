@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use amimono::{Component, Runtime};
+use amimono::config::ComponentConfig;
 use rand::seq::IndexedRandom;
 
 use crate::shared::Ad;
@@ -63,13 +63,11 @@ impl AdService {
 }
 
 impl ops::Handler for AdService {
-    const LABEL: amimono::Label = "adservice";
-
-    async fn new(_rt: &Runtime) -> Self {
+    fn new() -> Self {
         AdService::new()
     }
 
-    async fn get_ads(&self, _rt: &Runtime, context_keys: Vec<String>) -> Vec<Ad> {
+    async fn get_ads(&self, context_keys: Vec<String>) -> Vec<Ad> {
         log::info!("received ad request (context_words={:?})", context_keys);
         let ads = if context_keys.len() > 0 {
             context_keys
@@ -88,8 +86,8 @@ impl ops::Handler for AdService {
     }
 }
 
-pub type AdClient = ops::RpcClient<AdService>;
+pub type AdClient = ops::Client<AdService>;
 
-pub fn component() -> Component {
-    ops::component::<AdService>()
+pub fn component() -> ComponentConfig {
+    ops::component::<AdService>("adservice".to_owned())
 }

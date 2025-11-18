@@ -1,4 +1,4 @@
-use amimono::{Component, Runtime};
+use amimono::config::ComponentConfig;
 use serde::{Deserialize, Serialize};
 
 use crate::shared::Product;
@@ -25,20 +25,18 @@ pub struct ProductCatalogService {
 }
 
 impl ops::Handler for ProductCatalogService {
-    const LABEL: amimono::Label = "productcatalog";
-
-    async fn new(_rt: &Runtime) -> ProductCatalogService {
+    fn new() -> ProductCatalogService {
         let data: ProductCatalogData = serde_json::from_str(PRODUCT_CATALOG_DATA).unwrap();
         log::debug!("catalog loaded: {:?}", data.products);
         ProductCatalogService { data }
     }
 
-    async fn list_products(&self, _rt: &Runtime) -> Vec<Product> {
+    async fn list_products(&self) -> Vec<Product> {
         log::debug!("list_products()");
         self.data.products.clone()
     }
 
-    async fn get_product(&self, _rt: &Runtime, id: String) -> Product {
+    async fn get_product(&self, id: String) -> Product {
         log::debug!("get_product({id:?})");
         self.data
             .products
@@ -49,7 +47,7 @@ impl ops::Handler for ProductCatalogService {
             .clone()
     }
 
-    async fn search_products(&self, _rt: &Runtime, query: String) -> Vec<Product> {
+    async fn search_products(&self, query: String) -> Vec<Product> {
         log::debug!("search_products({query:?})");
         let query = query.to_lowercase();
         self.data
@@ -64,8 +62,8 @@ impl ops::Handler for ProductCatalogService {
     }
 }
 
-pub type ProductCatalogClient = ops::RpcClient<ProductCatalogService>;
+pub type ProductCatalogClient = ops::Client<ProductCatalogService>;
 
-pub fn component() -> Component {
-    ops::component::<ProductCatalogService>()
+pub fn component() -> ComponentConfig {
+    ops::component::<ProductCatalogService>("productcatalogservice".to_owned())
 }

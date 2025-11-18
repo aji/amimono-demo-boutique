@@ -1,4 +1,4 @@
-use amimono::{Component, Runtime};
+use amimono::config::ComponentConfig;
 
 use crate::shared::OrderResult;
 
@@ -13,24 +13,17 @@ mod ops {
 pub struct EmailService;
 
 impl ops::Handler for EmailService {
-    const LABEL: amimono::Label = "emailservice";
-
-    async fn new(_rt: &Runtime) -> Self {
+    fn new() -> Self {
         EmailService
     }
 
-    async fn send_order_confirmation(
-        &self,
-        _rt: &amimono::Runtime,
-        _email: String,
-        _order: OrderResult,
-    ) -> () {
+    async fn send_order_confirmation(&self, _email: String, _order: OrderResult) -> () {
         todo!()
     }
 }
 
-pub type EmailClient = ops::RpcClient<EmailService>;
+pub type EmailClient = ops::Client<EmailService>;
 
-pub fn component() -> Component {
-    ops::component::<EmailService>()
+pub fn component() -> ComponentConfig {
+    ops::component::<EmailService>("emailservice".to_string())
 }

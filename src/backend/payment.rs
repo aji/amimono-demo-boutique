@@ -1,4 +1,4 @@
-use amimono::{Component, Runtime};
+use amimono::config::ComponentConfig;
 
 use crate::shared::{CreditCardInfo, Money};
 
@@ -13,26 +13,19 @@ mod ops {
 pub struct PaymentService;
 
 impl ops::Handler for PaymentService {
-    const LABEL: amimono::Label = "paymentservice";
-
-    async fn new(_rt: &Runtime) -> Self {
+    fn new() -> Self {
         PaymentService
     }
 
-    async fn charge(
-        &self,
-        _rt: &amimono::Runtime,
-        amount: Money,
-        credit_card: CreditCardInfo,
-    ) -> String {
+    async fn charge(&self, amount: Money, credit_card: CreditCardInfo) -> String {
         log::info!("charge {:?} with {:?}", credit_card, amount);
         // TODO, leave this stubbed for now
         uuid::Uuid::new_v4().to_string()
     }
 }
 
-pub type PaymentClient = ops::RpcClient<PaymentService>;
+pub type PaymentClient = ops::Client<PaymentService>;
 
-pub fn component() -> Component {
-    ops::component::<PaymentService>()
+pub fn component() -> ComponentConfig {
+    ops::component::<PaymentService>("paymentservice".to_string())
 }

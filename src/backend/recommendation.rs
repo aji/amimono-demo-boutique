@@ -1,4 +1,4 @@
-use amimono::{Component, Runtime};
+use amimono::config::ComponentConfig;
 
 mod ops {
     amimono::rpc_ops! {
@@ -9,15 +9,12 @@ mod ops {
 pub struct RecommendationService;
 
 impl ops::Handler for RecommendationService {
-    const LABEL: amimono::Label = "recommendationservice";
-
-    async fn new(_rt: &Runtime) -> Self {
+    fn new() -> Self {
         RecommendationService
     }
 
     async fn list_recommendations(
         &self,
-        _rt: &amimono::Runtime,
         _user_id: String,
         _product_ids: Vec<String>,
     ) -> Vec<String> {
@@ -26,8 +23,8 @@ impl ops::Handler for RecommendationService {
     }
 }
 
-pub type RecommendationClient = ops::RpcClient<RecommendationService>;
+pub type RecommendationClient = ops::Client<RecommendationService>;
 
-pub fn component() -> Component {
-    ops::component::<RecommendationService>()
+pub fn component() -> ComponentConfig {
+    ops::component::<RecommendationService>("recommendationservice".to_string())
 }

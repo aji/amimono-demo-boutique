@@ -1,4 +1,4 @@
-use amimono::{AppBuilder, AppConfig, JobBuilder};
+use amimono::config::{AppBuilder, AppConfig, JobBuilder};
 
 pub mod backend;
 pub mod frontend;
@@ -42,10 +42,7 @@ fn configure_strict_microservices() -> AppConfig {
 }
 
 fn configure() -> AppConfig {
-    match std::env::var("AMIMONO_JOB").as_ref().map(String::as_str) {
-        Ok("_local") => configure_strict_monolith(),
-        _ => configure_strict_microservices(),
-    }
+    configure_strict_monolith()
 }
 
 fn main() {

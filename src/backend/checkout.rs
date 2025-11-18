@@ -1,4 +1,4 @@
-use amimono::{Component, RpcError, Runtime};
+use amimono::{config::ComponentConfig, rpc::RpcError};
 
 use crate::{
     backend::{
@@ -40,21 +40,16 @@ struct OrderPrep {
 impl CheckoutService {
     async fn prepare_order_items_and_shipping_quote_from_cart(
         &self,
-        rt: &Runtime,
         user_id: &str,
         user_currency: &str,
         address: &Address,
     ) -> OrderPrep {
-        let cart_items = self.get_user_cart(rt, user_id).await;
+        let cart_items = self.get_user_cart(user_id).await;
         let order_items = self
-            .prep_order_items(rt, cart_items.as_slice(), user_currency)
+            .prep_order_items(cart_items.as_slice(), user_currency)
             .await;
-        let shipping_usd = self
-            .quote_shipping(rt, address, cart_items.as_slice())
-            .await;
-        let shipping_price = self
-            .convert_currency(rt, &shipping_usd, user_currency)
-            .await;
+        let shipping_usd = self.quote_shipping(address, cart_items.as_slice()).await;
+        let shipping_price = self.convert_currency(&shipping_usd, user_currency).await;
 
         OrderPrep {
             order_items,
@@ -63,46 +58,32 @@ impl CheckoutService {
         }
     }
 
-    async fn quote_shipping(
-        &self,
-        rt: &Runtime,
-        address: &Address,
-        cart_items: &[CartItem],
-    ) -> Money {
+    async fn quote_shipping(&self, address: &Address, cart_items: &[CartItem]) -> Money {
         self.shipping
-            .get_quote(rt, address.clone(), cart_items.to_vec())
+            .get_quote(address.clone(), cart_items.to_vec())
             .await
             .unwrap()
     }
 
-    async fn get_user_cart(&self, rt: &Runtime, user_id: &str) -> Vec<CartItem> {
-        self.cart
-            .get_cart(rt, user_id.to_owned())
-            .await
-            .unwrap()
-            .items
+    async fn get_user_cart(&self, user_id: &str) -> Vec<CartItem> {
+        self.cart.get_cart(user_id.to_owned()).await.unwrap().items
     }
 
-    async fn empty_user_cart(&self, rt: &Runtime, user_id: &str) {
-        self.cart.empty_cart(rt, user_id.to_owned()).await.unwrap()
+    async fn empty_user_cart(&self, user_id: &str) {
+        self.cart.empty_cart(user_id.to_owned()).await.unwrap()
     }
 
-    async fn prep_order_items(
-        &self,
-        rt: &Runtime,
-        items: &[CartItem],
-        user_currency: &str,
-    ) -> Vec<OrderItem> {
+    async fn prep_order_items(&self, items: &[CartItem], user_currency: &str) -> Vec<OrderItem> {
         let mut res: Vec<OrderItem> = Vec::new();
         for item in items.iter() {
             let product = self
                 .productcatalog
-                .get_product(rt, item.product_id.to_string())
+                .get_product(item.product_id.to_string())
                 .await
                 .unwrap();
             let price = self
                 .currency
-                .convert(rt, product.price_usd.clone(), user_currency.to_owned())
+                .convert(product.price_usd.clone(), user_currency.to_owned())
                 .await
                 .unwrap();
             res.push(OrderItem {
@@ -113,61 +94,52 @@ impl CheckoutService {
         res
     }
 
-    async fn convert_currency(&self, rt: &Runtime, from: &Money, to: &str) -> Money {
+    async fn convert_currency(&self, from: &Money, to: &str) -> Money {
         self.currency
-            .convert(rt, from.clone(), to.to_owned())
+            .convert(from.clone(), to.to_owned())
             .await
             .unwrap()
     }
 
-    async fn charge_card(
-        &self,
-        rt: &Runtime,
-        amount: &Money,
-        payment_info: &CreditCardInfo,
-    ) -> String {
+    async fn charge_card(&self, amount: &Money, payment_info: &CreditCardInfo) -> String {
         self.payment
-            .charge(rt, amount.clone(), payment_info.clone())
+            .charge(amount.clone(), payment_info.clone())
             .await
             .unwrap()
     }
 
     async fn send_order_confirmation(
         &self,
-        rt: &Runtime,
         email: &str,
         order: &OrderResult,
     ) -> Result<(), RpcError> {
         self.email
-            .send_order_confirmation(rt, email.to_string(), order.clone())
+            .send_order_confirmation(email.to_string(), order.clone())
             .await
     }
 
-    async fn ship_order(&self, rt: &Runtime, address: &Address, items: &[CartItem]) -> String {
+    async fn ship_order(&self, address: &Address, items: &[CartItem]) -> String {
         self.shipping
-            .ship_order(rt, address.clone(), items.to_vec())
+            .ship_order(address.clone(), items.to_vec())
             .await
             .unwrap()
     }
 }
 
 impl ops::Handler for CheckoutService {
-    const LABEL: amimono::Label = "checkoutservice";
-
-    async fn new(rt: &Runtime) -> Self {
+    fn new() -> Self {
         CheckoutService {
-            productcatalog: ProductCatalogClient::new(rt).await,
-            cart: CartClient::new(rt).await,
-            currency: CurrencyClient::new(rt).await,
-            shipping: ShippingClient::new(rt).await,
-            email: EmailClient::new(rt).await,
-            payment: PaymentClient::new(rt).await,
+            productcatalog: ProductCatalogClient::new(),
+            cart: CartClient::new(),
+            currency: CurrencyClient::new(),
+            shipping: ShippingClient::new(),
+            email: EmailClient::new(),
+            payment: PaymentClient::new(),
         }
     }
 
     async fn checkout(
         &self,
-        rt: &Runtime,
         user_id: String,
         user_currency: String,
         address: Address,
@@ -182,12 +154,7 @@ impl ops::Handler for CheckoutService {
 
         let order_id = uuid::Uuid::new_v4().to_string();
         let prep = self
-            .prepare_order_items_and_shipping_quote_from_cart(
-                rt,
-                &user_id,
-                &user_currency,
-                &address,
-            )
+            .prepare_order_items_and_shipping_quote_from_cart(&user_id, &user_currency, &address)
             .await;
 
         let total = prep.shipping_cost_localized.clone()
@@ -197,12 +164,12 @@ impl ops::Handler for CheckoutService {
                 .map(|x| x.item.quantity * x.cost.clone())
                 .sum();
 
-        let tx_id = self.charge_card(rt, &total, &credit_card).await;
+        let tx_id = self.charge_card(&total, &credit_card).await;
         log::info!("payment went through (transaction_id: {})", tx_id);
 
-        let shipping_tracking_id = self.ship_order(rt, &address, &prep.cart_items[..]).await;
+        let shipping_tracking_id = self.ship_order(&address, &prep.cart_items[..]).await;
 
-        self.empty_user_cart(rt, &user_id).await;
+        self.empty_user_cart(&user_id).await;
 
         let order = OrderResult {
             order_id,
@@ -212,7 +179,7 @@ impl ops::Handler for CheckoutService {
             items: prep.order_items,
         };
 
-        match self.send_order_confirmation(rt, &email, &order).await {
+        match self.send_order_confirmation(&email, &order).await {
             Ok(_) => log::info!("order confirmation email sent to {}", email),
             Err(_) => log::warn!("failed to send order confirmation to {}", email),
         }
@@ -221,8 +188,8 @@ impl ops::Handler for CheckoutService {
     }
 }
 
-pub type CheckoutClient = ops::RpcClient<CheckoutService>;
+pub type CheckoutClient = ops::Client<CheckoutService>;
 
-pub fn component() -> Component {
-    ops::component::<CheckoutService>()
+pub fn component() -> ComponentConfig {
+    ops::component::<CheckoutService>("checkoutservice".to_string())
 }

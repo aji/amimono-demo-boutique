@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use amimono::{Component, Runtime};
+use amimono::config::ComponentConfig;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
@@ -28,15 +28,13 @@ pub struct CartService {
 }
 
 impl ops::Handler for CartService {
-    const LABEL: amimono::Label = "cartservice";
-
-    async fn new(_rt: &Runtime) -> CartService {
+    fn new() -> CartService {
         CartService {
             carts: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
-    async fn add_item(&self, _rt: &Runtime, user_id: String, item: CartItem) -> () {
+    async fn add_item(&self, user_id: String, item: CartItem) -> () {
         log::info!("add_item({}, {})", user_id, item.product_id);
         self.carts
             .lock()
@@ -46,7 +44,7 @@ impl ops::Handler for CartService {
             .push(item.clone());
     }
 
-    async fn get_cart(&self, _rt: &Runtime, user_id: String) -> Cart {
+    async fn get_cart(&self, user_id: String) -> Cart {
         log::info!("get_cart({})", user_id);
         let items = self
             .carts
@@ -61,14 +59,14 @@ impl ops::Handler for CartService {
         }
     }
 
-    async fn empty_cart(&self, _rt: &Runtime, user_id: String) -> () {
+    async fn empty_cart(&self, user_id: String) -> () {
         log::info!("empty_cart({})", user_id);
         self.carts.lock().await.remove(&user_id);
     }
 }
 
-pub type CartClient = ops::RpcClient<CartService>;
+pub type CartClient = ops::Client<CartService>;
 
-pub fn component() -> Component {
-    ops::component::<CartService>()
+pub fn component() -> ComponentConfig {
+    ops::component::<CartService>("cartservice".to_owned())
 }
