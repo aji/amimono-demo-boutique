@@ -19,6 +19,15 @@ pub struct CurrencyService {
 
 const CURRENCY_CONVERSION_DATA: &'static str = include_str!("conversion.json");
 
+impl CurrencyService {
+    fn get_per_euro(&self, currency_code: &str) -> RpcResult<f64> {
+        self.conversion
+            .get(currency_code)
+            .cloned()
+            .ok_or_else(|| format!("unsupported currency: {}", currency_code).into())
+    }
+}
+
 impl ops::Handler for CurrencyService {
     async fn new() -> CurrencyService {
         let service = CurrencyService {
@@ -33,8 +42,8 @@ impl ops::Handler for CurrencyService {
     }
 
     async fn convert(&self, from: Money, to: String) -> RpcResult<Money> {
-        let from_per_euro = self.conversion.get(&from.currency_code).unwrap();
-        let to_per_euro = self.conversion.get(&to).unwrap();
+        let from_per_euro = self.get_per_euro(&from.currency_code)?;
+        let to_per_euro = self.get_per_euro(&to)?;
 
         let to_per_from = to_per_euro / from_per_euro;
 
