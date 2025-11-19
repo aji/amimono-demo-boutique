@@ -1,4 +1,4 @@
-use amimono::config::ComponentConfig;
+use amimono::{config::ComponentConfig, rpc::RpcError};
 
 mod ops {
     amimono::rpc_ops! {
@@ -17,9 +17,9 @@ impl ops::Handler for RecommendationService {
         &self,
         _user_id: String,
         _product_ids: Vec<String>,
-    ) -> Vec<String> {
+    ) -> Result<Vec<String>, RpcError> {
         // TODO
-        vec![]
+        Ok(vec![])
     }
 }
 

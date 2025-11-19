@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use amimono::config::ComponentConfig;
+use amimono::{config::ComponentConfig, rpc::RpcError};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
@@ -34,7 +34,7 @@ impl ops::Handler for CartService {
         }
     }
 
-    async fn add_item(&self, user_id: String, item: CartItem) -> () {
+    async fn add_item(&self, user_id: String, item: CartItem) -> Result<(), RpcError> {
         log::info!("add_item({}, {})", user_id, item.product_id);
         self.carts
             .lock()
@@ -42,9 +42,10 @@ impl ops::Handler for CartService {
             .entry(user_id)
             .or_insert(Vec::new())
             .push(item.clone());
+        Ok(())
     }
 
-    async fn get_cart(&self, user_id: String) -> Cart {
+    async fn get_cart(&self, user_id: String) -> Result<Cart, RpcError> {
         log::info!("get_cart({})", user_id);
         let items = self
             .carts
@@ -53,15 +54,16 @@ impl ops::Handler for CartService {
             .get(&user_id)
             .cloned()
             .unwrap_or(Vec::new());
-        Cart {
+        Ok(Cart {
             user_id: user_id.to_string(),
             items,
-        }
+        })
     }
 
-    async fn empty_cart(&self, user_id: String) -> () {
+    async fn empty_cart(&self, user_id: String) -> Result<(), RpcError> {
         log::info!("empty_cart({})", user_id);
         self.carts.lock().await.remove(&user_id);
+        Ok(())
     }
 }
 

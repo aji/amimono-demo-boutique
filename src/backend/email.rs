@@ -1,4 +1,7 @@
-use amimono::config::ComponentConfig;
+use amimono::{
+    config::ComponentConfig,
+    rpc::{Rpc, RpcError},
+};
 
 use crate::shared::OrderResult;
 
@@ -17,8 +20,14 @@ impl ops::Handler for EmailService {
         EmailService
     }
 
-    async fn send_order_confirmation(&self, _email: String, _order: OrderResult) -> () {
-        todo!()
+    async fn send_order_confirmation(
+        &self,
+        _email: String,
+        _order: OrderResult,
+    ) -> Result<(), RpcError> {
+        Err(RpcError::Misc(
+            "send_order_confirmation is not implemented yet".to_owned(),
+        ))
     }
 }
 

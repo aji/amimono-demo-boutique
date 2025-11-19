@@ -1,4 +1,4 @@
-use amimono::config::ComponentConfig;
+use amimono::{config::ComponentConfig, rpc::RpcError};
 use serde::{Deserialize, Serialize};
 
 use crate::shared::Product;
@@ -31,26 +31,29 @@ impl ops::Handler for ProductCatalogService {
         ProductCatalogService { data }
     }
 
-    async fn list_products(&self) -> Vec<Product> {
+    async fn list_products(&self) -> Result<Vec<Product>, RpcError> {
         log::debug!("list_products()");
-        self.data.products.clone()
+        Ok(self.data.products.clone())
     }
 
-    async fn get_product(&self, id: String) -> Product {
+    async fn get_product(&self, id: String) -> Result<Product, RpcError> {
         log::debug!("get_product({id:?})");
-        self.data
+        let res = self
+            .data
             .products
             .iter()
             .filter(|x| x.id == id)
             .next()
             .expect("no such product with ID")
-            .clone()
+            .clone();
+        Ok(res)
     }
 
-    async fn search_products(&self, query: String) -> Vec<Product> {
+    async fn search_products(&self, query: String) -> Result<Vec<Product>, RpcError> {
         log::debug!("search_products({query:?})");
         let query = query.to_lowercase();
-        self.data
+        let res = self
+            .data
             .products
             .iter()
             .filter(|x| {
@@ -58,7 +61,8 @@ impl ops::Handler for ProductCatalogService {
                     || x.description.to_lowercase().contains(&query[..])
             })
             .cloned()
-            .collect()
+            .collect();
+        Ok(res)
     }
 }
 

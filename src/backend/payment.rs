@@ -1,4 +1,4 @@
-use amimono::config::ComponentConfig;
+use amimono::{config::ComponentConfig, rpc::RpcError};
 
 use crate::shared::{CreditCardInfo, Money};
 
@@ -17,10 +17,10 @@ impl ops::Handler for PaymentService {
         PaymentService
     }
 
-    async fn charge(&self, amount: Money, credit_card: CreditCardInfo) -> String {
+    async fn charge(&self, amount: Money, credit_card: CreditCardInfo) -> Result<String, RpcError> {
         log::info!("charge {:?} with {:?}", credit_card, amount);
         // TODO, leave this stubbed for now
-        uuid::Uuid::new_v4().to_string()
+        Ok(uuid::Uuid::new_v4().to_string())
     }
 }
 

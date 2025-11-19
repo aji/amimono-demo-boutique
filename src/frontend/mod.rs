@@ -239,7 +239,7 @@ pub fn component() -> ComponentConfig {
     ComponentConfig {
         label: "frontend".to_string(),
         id: FrontendServer::id(),
-        binding: BindingType::Http,
+        binding: BindingType::HttpFixed(8123),
         entry: frontend_main,
     }
 }
