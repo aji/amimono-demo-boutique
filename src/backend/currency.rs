@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use amimono::{config::ComponentConfig, rpc::RpcError};
+use amimono::{config::ComponentConfig, rpc::RpcResult};
 
 use crate::shared::Money;
 
@@ -28,11 +28,11 @@ impl ops::Handler for CurrencyService {
         service
     }
 
-    async fn get_supported_currencies(&self) -> Result<Vec<String>, RpcError> {
+    async fn get_supported_currencies(&self) -> RpcResult<Vec<String>> {
         Ok(self.conversion.keys().cloned().collect())
     }
 
-    async fn convert(&self, from: Money, to: String) -> Result<Money, RpcError> {
+    async fn convert(&self, from: Money, to: String) -> RpcResult<Money> {
         let from_per_euro = self.conversion.get(&from.currency_code).unwrap();
         let to_per_euro = self.conversion.get(&to).unwrap();
 

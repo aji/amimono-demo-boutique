@@ -1,4 +1,4 @@
-use amimono::{config::ComponentConfig, rpc::RpcError};
+use amimono::{config::ComponentConfig, rpc::RpcResult};
 use serde::{Deserialize, Serialize};
 
 use crate::shared::Product;
@@ -31,12 +31,12 @@ impl ops::Handler for ProductCatalogService {
         ProductCatalogService { data }
     }
 
-    async fn list_products(&self) -> Result<Vec<Product>, RpcError> {
+    async fn list_products(&self) -> RpcResult<Vec<Product>> {
         log::debug!("list_products()");
         Ok(self.data.products.clone())
     }
 
-    async fn get_product(&self, id: String) -> Result<Product, RpcError> {
+    async fn get_product(&self, id: String) -> RpcResult<Product> {
         log::debug!("get_product({id:?})");
         let res = self
             .data
@@ -49,7 +49,7 @@ impl ops::Handler for ProductCatalogService {
         Ok(res)
     }
 
-    async fn search_products(&self, query: String) -> Result<Vec<Product>, RpcError> {
+    async fn search_products(&self, query: String) -> RpcResult<Vec<Product>> {
         log::debug!("search_products({query:?})");
         let query = query.to_lowercase();
         let res = self

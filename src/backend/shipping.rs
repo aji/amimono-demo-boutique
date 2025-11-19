@@ -1,4 +1,7 @@
-use amimono::{config::ComponentConfig, rpc::RpcError};
+use amimono::{
+    config::ComponentConfig,
+    rpc::{RpcError, RpcResult},
+};
 
 use crate::shared::{Address, CartItem, Money};
 
@@ -18,17 +21,13 @@ impl ops::Handler for ShippingService {
         ShippingService
     }
 
-    async fn get_quote(&self, _address: Address, _items: Vec<CartItem>) -> Result<Money, RpcError> {
+    async fn get_quote(&self, _address: Address, _items: Vec<CartItem>) -> RpcResult<Money> {
         Err(RpcError::Misc(
             "get_quote is not implemented yet".to_owned(),
         ))
     }
 
-    async fn ship_order(
-        &self,
-        _address: Address,
-        _items: Vec<CartItem>,
-    ) -> Result<String, RpcError> {
+    async fn ship_order(&self, _address: Address, _items: Vec<CartItem>) -> RpcResult<String> {
         Err(RpcError::Misc(
             "ship_order is not implemented yet".to_owned(),
         ))

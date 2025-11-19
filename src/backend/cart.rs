@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use amimono::{config::ComponentConfig, rpc::RpcError};
+use amimono::{config::ComponentConfig, rpc::RpcResult};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
@@ -34,7 +34,7 @@ impl ops::Handler for CartService {
         }
     }
 
-    async fn add_item(&self, user_id: String, item: CartItem) -> Result<(), RpcError> {
+    async fn add_item(&self, user_id: String, item: CartItem) -> RpcResult<()> {
         log::info!("add_item({}, {})", user_id, item.product_id);
         self.carts
             .lock()
@@ -45,7 +45,7 @@ impl ops::Handler for CartService {
         Ok(())
     }
 
-    async fn get_cart(&self, user_id: String) -> Result<Cart, RpcError> {
+    async fn get_cart(&self, user_id: String) -> RpcResult<Cart> {
         log::info!("get_cart({})", user_id);
         let items = self
             .carts
@@ -60,7 +60,7 @@ impl ops::Handler for CartService {
         })
     }
 
-    async fn empty_cart(&self, user_id: String) -> Result<(), RpcError> {
+    async fn empty_cart(&self, user_id: String) -> RpcResult<()> {
         log::info!("empty_cart({})", user_id);
         self.carts.lock().await.remove(&user_id);
         Ok(())

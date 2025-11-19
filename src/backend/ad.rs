@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use amimono::{config::ComponentConfig, rpc::RpcError};
+use amimono::{config::ComponentConfig, rpc::RpcResult};
 use rand::seq::IndexedRandom;
 
 use crate::shared::Ad;
@@ -67,7 +67,7 @@ impl ops::Handler for AdService {
         AdService::new()
     }
 
-    async fn get_ads(&self, context_keys: Vec<String>) -> Result<Vec<Ad>, RpcError> {
+    async fn get_ads(&self, context_keys: Vec<String>) -> RpcResult<Vec<Ad>> {
         log::info!("received ad request (context_words={:?})", context_keys);
         let ads = if context_keys.len() > 0 {
             context_keys

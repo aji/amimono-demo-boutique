@@ -1,4 +1,4 @@
-use amimono::{config::ComponentConfig, rpc::RpcError};
+use amimono::{config::ComponentConfig, rpc::RpcResult};
 
 use crate::{
     backend::{
@@ -43,7 +43,7 @@ impl CheckoutService {
         user_id: &str,
         user_currency: &str,
         address: &Address,
-    ) -> Result<OrderPrep, RpcError> {
+    ) -> RpcResult<OrderPrep> {
         let cart_items = self.get_user_cart(user_id).await?;
         let order_items = self
             .prep_order_items(cart_items.as_slice(), user_currency)
@@ -58,22 +58,18 @@ impl CheckoutService {
         })
     }
 
-    async fn quote_shipping(
-        &self,
-        address: &Address,
-        cart_items: &[CartItem],
-    ) -> Result<Money, RpcError> {
+    async fn quote_shipping(&self, address: &Address, cart_items: &[CartItem]) -> RpcResult<Money> {
         self.shipping
             .get_quote(address.clone(), cart_items.to_vec())
             .await
     }
 
-    async fn get_user_cart(&self, user_id: &str) -> Result<Vec<CartItem>, RpcError> {
+    async fn get_user_cart(&self, user_id: &str) -> RpcResult<Vec<CartItem>> {
         let cart = self.cart.get_cart(user_id.to_owned()).await?;
         Ok(cart.items)
     }
 
-    async fn empty_user_cart(&self, user_id: &str) -> Result<(), RpcError> {
+    async fn empty_user_cart(&self, user_id: &str) -> RpcResult<()> {
         self.cart.empty_cart(user_id.to_owned()).await
     }
 
@@ -81,7 +77,7 @@ impl CheckoutService {
         &self,
         items: &[CartItem],
         user_currency: &str,
-    ) -> Result<Vec<OrderItem>, RpcError> {
+    ) -> RpcResult<Vec<OrderItem>> {
         let mut res: Vec<OrderItem> = Vec::new();
         for item in items.iter() {
             let product = self
@@ -100,7 +96,7 @@ impl CheckoutService {
         Ok(res)
     }
 
-    async fn convert_currency(&self, from: &Money, to: &str) -> Result<Money, RpcError> {
+    async fn convert_currency(&self, from: &Money, to: &str) -> RpcResult<Money> {
         self.currency.convert(from.clone(), to.to_owned()).await
     }
 
@@ -108,23 +104,19 @@ impl CheckoutService {
         &self,
         amount: &Money,
         payment_info: &CreditCardInfo,
-    ) -> Result<String, RpcError> {
+    ) -> RpcResult<String> {
         self.payment
             .charge(amount.clone(), payment_info.clone())
             .await
     }
 
-    async fn send_order_confirmation(
-        &self,
-        email: &str,
-        order: &OrderResult,
-    ) -> Result<(), RpcError> {
+    async fn send_order_confirmation(&self, email: &str, order: &OrderResult) -> RpcResult<()> {
         self.email
             .send_order_confirmation(email.to_string(), order.clone())
             .await
     }
 
-    async fn ship_order(&self, address: &Address, items: &[CartItem]) -> Result<String, RpcError> {
+    async fn ship_order(&self, address: &Address, items: &[CartItem]) -> RpcResult<String> {
         self.shipping
             .ship_order(address.clone(), items.to_vec())
             .await
@@ -150,7 +142,7 @@ impl ops::Handler for CheckoutService {
         address: Address,
         email: String,
         credit_card: CreditCardInfo,
-    ) -> Result<OrderResult, RpcError> {
+    ) -> RpcResult<OrderResult> {
         log::info!(
             "[PlaceOrder] user_id={} user_currency={}",
             user_id,
