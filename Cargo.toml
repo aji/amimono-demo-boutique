@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-amimono = { path = "../amimono/amimono", version = "0.1.0" }
+amimono = { git = "https://github.com/aji/amimono.git" }
 axum = { version = "0.8.7", features = ["form"] }
 axum-extra = { version = "0.12.2", features = ["cookie"] }
 env_logger = "0.11.8"

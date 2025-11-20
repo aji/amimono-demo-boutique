@@ -14,6 +14,7 @@ dependencies = [
 [[package]]
 name = "amimono"
 version = "0.1.0"
+source = "git+https://github.com/aji/amimono.git#03dde9e3b461cbbf8148722ab58aa918a5a4aa8e"
 dependencies = [
  "axum",
  "clap",

@@ -3,7 +3,7 @@ use std::{fmt, net::SocketAddr, time::Instant};
 use amimono::{
     config::{Binding, BindingType, ComponentConfig},
     rpc::RpcError,
-    runtime::{self, Component},
+    runtime::{self, Component, Location},
 };
 use axum::{
     Form, Router,
@@ -84,9 +84,13 @@ struct FrontendServerData {
 
 impl FrontendServer {
     async fn new() -> FrontendServer {
-        let (sock_addr, base_url) = match runtime::binding::<Self>() {
-            Binding::Http(sock, url) => (sock, url),
+        let sock_addr = match runtime::binding::<Self>() {
+            Binding::Http(port) => ([0, 0, 0, 0], port).into(),
             _ => panic!("FrontendServer does not have a binding"),
+        };
+        let base_url = match runtime::discover::<Self>() {
+            Location::Http(url) => url.clone(),
+            _ => panic!("FrontendServer does not have a URL"),
         };
 
         FrontendServer {
