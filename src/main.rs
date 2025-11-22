@@ -6,7 +6,7 @@ pub mod shared;
 
 #[allow(unused)]
 fn configure_strict_monolith() -> AppConfig {
-    AppBuilder::new()
+    AppBuilder::new(env!("APP_REVISION"))
         .add_job(
             JobBuilder::new()
                 .with_label("boutique")
@@ -27,7 +27,7 @@ fn configure_strict_monolith() -> AppConfig {
 
 #[allow(unused)]
 fn configure_strict_microservices() -> AppConfig {
-    AppBuilder::new()
+    AppBuilder::new(env!("APP_REVISION"))
         .add_job(JobBuilder::new().add_component(frontend::component()))
         .add_job(JobBuilder::new().add_component(backend::ad::component()))
         .add_job(JobBuilder::new().add_component(backend::cart::component()))
@@ -42,7 +42,7 @@ fn configure_strict_microservices() -> AppConfig {
 }
 
 fn configure() -> AppConfig {
-    configure_strict_monolith()
+    configure_strict_microservices()
 }
 
 fn main() {

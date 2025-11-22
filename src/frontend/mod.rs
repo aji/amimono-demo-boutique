@@ -3,7 +3,7 @@ use std::{fmt, net::SocketAddr, time::Instant};
 use amimono::{
     config::{Binding, BindingType, ComponentConfig},
     rpc::RpcError,
-    runtime::{self, Component, Location},
+    runtime::{self, Component},
 };
 use axum::{
     Form, Router,
@@ -72,6 +72,7 @@ struct FrontendServer {
 #[allow(unused)]
 struct FrontendServerData {
     sock_addr: SocketAddr,
+    discovery_url: String,
     base_url: String,
     ad: AdClient,
     cart: CartClient,
@@ -88,14 +89,19 @@ impl FrontendServer {
             Binding::Http(port) => ([0, 0, 0, 0], port).into(),
             _ => panic!("FrontendServer does not have a binding"),
         };
-        let base_url = match runtime::discover::<Self>() {
-            Location::Http(url) => url.clone(),
-            _ => panic!("FrontendServer does not have a URL"),
+        let discovery_url = match runtime::discover::<Self>().await {
+            runtime::Location::Http(url) => url,
+            _ => panic!("FrontendServer location undiscoverable"),
+        };
+        let base_url = match std::env::var("BOUTIQUE_BASE_URL") {
+            Ok(url) => url,
+            Err(_) => "".to_owned(),
         };
 
         FrontendServer {
             data: FrontendServerData {
                 sock_addr,
+                discovery_url,
                 base_url,
                 ad: AdClient::new(),
                 cart: CartClient::new(),
@@ -193,7 +199,11 @@ impl FrontendServer {
         let listener = tokio::net::TcpListener::bind(self.data.sock_addr)
             .await
             .unwrap();
-        log::info!("frontend listening on {}", self.data.base_url);
+        log::info!(
+            "frontend listening on {} (base_url={:?})",
+            self.data.discovery_url,
+            self.data.base_url
+        );
         axum::serve(listener, app).await.unwrap();
     }
 }
@@ -267,12 +277,6 @@ impl FrontendServerData {
     }
 }
 
-#[tokio::main]
-async fn frontend_main() {
-    let server = FrontendServer::new().await;
-    server.start().await
-}
-
 impl runtime::Component for FrontendServer {
     type Instance = ();
 }
@@ -282,6 +286,11 @@ pub fn component() -> ComponentConfig {
         label: "frontend".to_string(),
         id: FrontendServer::id(),
         binding: BindingType::HttpFixed(8123),
-        entry: frontend_main,
+        entry: || {
+            Box::pin(async {
+                let server = FrontendServer::new().await;
+                server.start().await;
+            })
+        },
     }
 }

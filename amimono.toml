@@ -1,5 +1,11 @@
 [project]
 format = "cargo"
 
-[target]
-dev = { driver = "kubernetes", cluster = "minikube" }
+[target.minikube]
+driver = "kubernetes"
+context = "minikube"
+image = "amimono-demo-boutique"
+
+[target.minikube.env]
+RUST_LOG = "debug"
+RUST_BACKTRACE = "1"
