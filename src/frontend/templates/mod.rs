@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Write;
 use tinytemplate::TinyTemplate;
 
-use crate::shared::{CartItem, Product};
+use crate::shared::{Address, CartItem, Money, OrderItem, Product};
 
 const CART_TEMPLATE: &'static str = include_str!("cart.html");
 const CHECKOUT_TEMPLATE: &'static str = include_str!("checkout.html");
@@ -52,9 +52,9 @@ pub struct CheckoutContext<'svc> {
     pub base_url: &'svc str,
     pub order_id: String,
     pub shipping_tracking_id: String,
-    pub shipping_cost: crate::shared::Money,
-    pub shipping_address: crate::shared::Address,
-    pub items: Vec<crate::shared::OrderItem>,
+    pub shipping_cost: Money,
+    pub shipping_address: Address,
+    pub items: Vec<OrderItem>,
 }
 
 #[derive(Deserialize)]

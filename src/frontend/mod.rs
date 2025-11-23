@@ -14,13 +14,11 @@ use axum::{
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
 
-use crate::{
-    backend::{
-        AdClient, CartClient, CheckoutClient, CurrencyClient, ProductCatalogClient,
-        RecommendationClient, ShippingClient,
-    },
-    shared::CartItem,
+use crate::backend::{
+    AdClient, CartClient, CheckoutClient, CurrencyClient, ProductCatalogClient,
+    RecommendationClient, ShippingClient,
 };
+use crate::shared::{Address, CartItem, CreditCardInfo, OrderResult};
 
 mod templates;
 
@@ -277,7 +275,7 @@ impl FrontendServerData {
 
     async fn checkout_ctx<'svc>(
         &'svc self,
-        order: crate::shared::OrderResult,
+        order: OrderResult,
     ) -> Res<templates::CheckoutContext<'svc>> {
         Ok(templates::CheckoutContext {
             header: self.header_ctx().await?,
@@ -295,17 +293,17 @@ impl FrontendServerData {
         &self,
         jar: CookieJar,
         form: templates::CheckoutForm,
-    ) -> Res<(CookieJar, crate::shared::OrderResult)> {
+    ) -> Res<(CookieJar, OrderResult)> {
         let (jar, user_id) = self.get_or_set_user_id(jar);
         let user_currency = "USD".to_string(); // TODO: support user currency selection
-        let address = crate::shared::Address {
+        let address = Address {
             street_address: form.street_address,
             city: form.city,
             state: form.state,
             country: form.country,
             zip_code: form.zip_code,
         };
-        let credit_card = crate::shared::CreditCardInfo {
+        let credit_card = CreditCardInfo {
             credit_card_number: form.credit_card_number,
             credit_card_ccv: form.credit_card_ccv,
             credit_card_expiration_year: form.credit_card_expiration_year,
