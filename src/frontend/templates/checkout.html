@@ -1,0 +1,21 @@
+{{ call header with header }}
+
+<main>
+  <h2>Order Confirmation</h2>
+  <p>Order ID: {order_id}</p>
+  <p>Shipping Tracking ID: {shipping_tracking_id}</p>
+  <p>Shipping Cost: {shipping_cost | money}</p>
+  <h3>Shipping Address</h3>
+  <ul>
+    <li>{shipping_address.street_address}</li>
+    <li>{shipping_address.city}, {shipping_address.state}, {shipping_address.country} {shipping_address.zip_code}</li>
+  </ul>
+  <h3>Items</h3>
+  <ul>
+    {{ for item in items }}
+    <li>{item.item.product_id} x{item.item.quantity} - {item.cost | money}</li>
+    {{ endfor }}
+  </ul>
+</main>
+
+{{ call footer with footer }}

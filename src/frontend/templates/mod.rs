@@ -5,6 +5,7 @@ use tinytemplate::TinyTemplate;
 use crate::shared::{CartItem, Product};
 
 const CART_TEMPLATE: &'static str = include_str!("cart.html");
+const CHECKOUT_TEMPLATE: &'static str = include_str!("checkout.html");
 const FOOTER_TEMPLATE: &'static str = include_str!("footer.html");
 const HEADER_TEMPLATE: &'static str = include_str!("header.html");
 const HOME_TEMPLATE: &'static str = include_str!("home.html");
@@ -44,10 +45,36 @@ pub struct CartContext<'svc> {
     pub items: Vec<CartItem>,
 }
 
+#[derive(Serialize)]
+pub struct CheckoutContext<'svc> {
+    pub header: HeaderContext<'svc>,
+    pub footer: FooterContext<'svc>,
+    pub base_url: &'svc str,
+    pub order_id: String,
+    pub shipping_tracking_id: String,
+    pub shipping_cost: crate::shared::Money,
+    pub shipping_address: crate::shared::Address,
+    pub items: Vec<crate::shared::OrderItem>,
+}
+
 #[derive(Deserialize)]
 pub struct CartForm {
     pub product_id: String,
     pub quantity: u32,
+}
+
+#[derive(Deserialize)]
+pub struct CheckoutForm {
+    pub street_address: String,
+    pub city: String,
+    pub state: String,
+    pub country: String,
+    pub zip_code: i32,
+    pub email: String,
+    pub credit_card_number: String,
+    pub credit_card_ccv: i32,
+    pub credit_card_expiration_year: i32,
+    pub credit_card_expiration_month: i32,
 }
 
 pub fn init() -> TinyTemplate<'static> {
@@ -58,6 +85,7 @@ pub fn init() -> TinyTemplate<'static> {
     tt.add_template("header", HEADER_TEMPLATE).unwrap();
     tt.add_template("home", HOME_TEMPLATE).unwrap();
     tt.add_template("product", PRODUCT_TEMPLATE).unwrap();
+    tt.add_template("checkout", CHECKOUT_TEMPLATE).unwrap();
 
     tt.add_formatter("money", |val, s| {
         let money = val.as_object().unwrap();

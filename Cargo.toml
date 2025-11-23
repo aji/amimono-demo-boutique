@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-amimono = { git = "https://github.com/aji/amimono.git", rev = "295141a" }
+amimono = { git = "https://github.com/aji/amimono.git", rev = "f9b83c7" }
 axum = { version = "0.8.7", features = ["form"] }
 axum-extra = { version = "0.12.2", features = ["cookie"] }
 env_logger = "0.11.8"
@@ -18,4 +18,4 @@ tower-http = { version = "0.6.6", features = ["fs"] }
 uuid = { version = "1.18.1", features = ["v4"] }
 
 [build-dependencies]
-amimono-build = { git = "https://github.com/aji/amimono.git", rev = "295141a" }
+amimono-build = { git = "https://github.com/aji/amimono.git", rev = "f9b83c7" }

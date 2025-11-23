@@ -8,15 +8,53 @@
     {{ for item in items }}
     <li>{item.product_id} x{item.quantity}</li>
     {{ endfor }}
-  </ul>
-  <div>
-    <form method="POST" action="{base_url}/cart/empty">
-      <button type="submit">Empty cart</button>
-    </form>
-  </div>
-  {{ else }}
-  <p>Your cart is empty!</p>
-  {{ endif }}
+</main>
+
+<section>
+  <h3>Checkout</h3>
+  <form method="POST" action="{base_url}/cart/checkout">
+    <div>
+      <label>Street Address: <input name="street_address" required></label>
+    </div>
+    <div>
+      <label>City: <input name="city" required></label>
+    </div>
+    <div>
+      <label>State: <input name="state" required></label>
+    </div>
+    <div>
+      <label>Country: <input name="country" required></label>
+    </div>
+    <div>
+      <label>Zip Code: <input name="zip_code" type="number" required></label>
+    </div>
+    <div>
+      <label>Email: <input name="email" type="email" required></label>
+    </div>
+    <div>
+      <label>Credit Card Number: <input name="credit_card_number" required></label>
+    </div>
+    <div>
+      <label>CCV: <input name="credit_card_ccv" type="number" required></label>
+    </div>
+    <div>
+      <label>Expiration Year: <input name="credit_card_expiration_year" type="number" required></label>
+    </div>
+    <div>
+      <label>Expiration Month: <input name="credit_card_expiration_month" type="number" required></label>
+    </div>
+    <button type="submit">Checkout</button>
+  </form>
+</section>
+</ul>
+<div>
+  <form method="POST" action="{base_url}/cart/empty">
+    <button type="submit">Empty cart</button>
+  </form>
+</div>
+{{ else }}
+<p>Your cart is empty!</p>
+{{ endif }}
 </main>
 
 {{ call footer with footer }}

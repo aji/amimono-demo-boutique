@@ -14,7 +14,7 @@ dependencies = [
 [[package]]
 name = "amimono"
 version = "0.1.0"
-source = "git+https://github.com/aji/amimono.git?rev=295141a#295141a13f991b8178dafac33c27fcee57dcc4bf"
+source = "git+https://github.com/aji/amimono.git?rev=f9b83c7#f9b83c72ca43ebd6e264c1f6fbf35410af5a888e"
 dependencies = [
  "axum",
  "clap",
@@ -33,7 +33,7 @@ dependencies = [
 [[package]]
 name = "amimono-build"
 version = "0.1.0"
-source = "git+https://github.com/aji/amimono.git?rev=295141a#295141a13f991b8178dafac33c27fcee57dcc4bf"
+source = "git+https://github.com/aji/amimono.git?rev=f9b83c7#f9b83c72ca43ebd6e264c1f6fbf35410af5a888e"
 dependencies = [
  "fnv",
  "glob",

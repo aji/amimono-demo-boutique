@@ -1,3 +1,4 @@
+impl FrontendServerData {}
 use std::{fmt, net::SocketAddr, time::Instant};
 
 use amimono::{
@@ -72,7 +73,6 @@ struct FrontendServer {
 #[allow(unused)]
 struct FrontendServerData {
     sock_addr: SocketAddr,
-    discovery_url: String,
     base_url: String,
     ad: AdClient,
     cart: CartClient,
@@ -89,10 +89,6 @@ impl FrontendServer {
             Binding::Http(port) => ([0, 0, 0, 0], port).into(),
             _ => panic!("FrontendServer does not have a binding"),
         };
-        let discovery_url = match runtime::discover::<Self>().await {
-            runtime::Location::Http(url) => url,
-            _ => panic!("FrontendServer location undiscoverable"),
-        };
         let base_url = match std::env::var("BOUTIQUE_BASE_URL") {
             Ok(url) => url,
             Err(_) => "".to_owned(),
@@ -101,7 +97,6 @@ impl FrontendServer {
         FrontendServer {
             data: FrontendServerData {
                 sock_addr,
-                discovery_url,
                 base_url,
                 ad: AdClient::new(),
                 cart: CartClient::new(),
@@ -175,8 +170,12 @@ impl FrontendServer {
             })
             .route("/cart/checkout", {
                 post({
-                    let _data = self.data.clone();
-                    async move || Html("<h1>TODO</h1>")
+                    let data = self.data.clone();
+                    async move |jar: CookieJar, Form(form): Form<templates::CheckoutForm>| -> Page {
+                        let (jar, order) = data.checkout_form(jar, form).await?;
+                        let ctx = data.checkout_ctx(order).await?;
+                        Ok((jar, Html(templates::init().render("checkout", &ctx)?)))
+                    }
                 })
             })
             .layer({
@@ -201,7 +200,7 @@ impl FrontendServer {
             .unwrap();
         log::info!(
             "frontend listening on {} (base_url={:?})",
-            self.data.discovery_url,
+            self.data.sock_addr,
             self.data.base_url
         );
         axum::serve(listener, app).await.unwrap();
@@ -274,6 +273,49 @@ impl FrontendServerData {
         };
         self.cart.add_item(user_id, item).await?;
         Ok(jar)
+    }
+
+    async fn checkout_ctx<'svc>(
+        &'svc self,
+        order: crate::shared::OrderResult,
+    ) -> Res<templates::CheckoutContext<'svc>> {
+        Ok(templates::CheckoutContext {
+            header: self.header_ctx().await?,
+            footer: self.footer_ctx().await?,
+            base_url: self.base_url.as_str(),
+            order_id: order.order_id,
+            shipping_tracking_id: order.shipping_tracking_id,
+            shipping_cost: order.shipping_cost,
+            shipping_address: order.shipping_address,
+            items: order.items,
+        })
+    }
+
+    async fn checkout_form(
+        &self,
+        jar: CookieJar,
+        form: templates::CheckoutForm,
+    ) -> Res<(CookieJar, crate::shared::OrderResult)> {
+        let (jar, user_id) = self.get_or_set_user_id(jar);
+        let user_currency = "USD".to_string(); // TODO: support user currency selection
+        let address = crate::shared::Address {
+            street_address: form.street_address,
+            city: form.city,
+            state: form.state,
+            country: form.country,
+            zip_code: form.zip_code,
+        };
+        let credit_card = crate::shared::CreditCardInfo {
+            credit_card_number: form.credit_card_number,
+            credit_card_ccv: form.credit_card_ccv,
+            credit_card_expiration_year: form.credit_card_expiration_year,
+            credit_card_expiration_month: form.credit_card_expiration_month,
+        };
+        let order = self
+            .checkout
+            .checkout(user_id, user_currency, address, form.email, credit_card)
+            .await?;
+        Ok((jar, order))
     }
 }
 
