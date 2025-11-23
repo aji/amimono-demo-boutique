@@ -1,4 +1,3 @@
-impl FrontendServerData {}
 use std::{fmt, net::SocketAddr, time::Instant};
 
 use amimono::{
