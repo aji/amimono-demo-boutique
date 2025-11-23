@@ -112,8 +112,9 @@ impl FrontendServer {
                 get({
                     let data = self.data.clone();
                     async move |jar: CookieJar| -> Page {
-                        let ctx = data.home_ctx().await?;
-                        Ok((jar, Html(templates::init().render("home", &ctx)?)))
+                        let (jar, ctx) = data.home_ctx(jar).await?;
+                        let html = templates::init().render("home", &ctx)?;
+                        Ok((jar, Html(html)))
                     }
                 })
             })
@@ -229,14 +230,33 @@ impl FrontendServerData {
         })
     }
 
-    async fn home_ctx(&'_ self) -> Res<templates::HomeContext<'_>> {
+    async fn home_ctx(&'_ self, jar: CookieJar) -> Res<(CookieJar, templates::HomeContext<'_>)> {
         let products = self.productcatalog.list_products().await?;
-        Ok(templates::HomeContext {
-            header: self.header_ctx().await?,
-            footer: self.footer_ctx().await?,
-            base_url: self.base_url.as_str(),
-            products,
-        })
+        // Get user_id from cookie jar
+        let (jar, user_id) = self.get_or_set_user_id(jar);
+        // Get recommended product ids from recommendation service
+        let recommended_ids = self
+            .recommendation
+            .list_recommendations(
+                user_id.clone(),
+                products.iter().map(|p| p.id.clone()).collect(),
+            )
+            .await?;
+        // Join recommended ids with products
+        let recommended: Vec<_> = recommended_ids
+            .into_iter()
+            .filter_map(|id| products.iter().find(|p| p.id == id).cloned())
+            .collect();
+        Ok((
+            jar,
+            templates::HomeContext {
+                header: self.header_ctx().await?,
+                footer: self.footer_ctx().await?,
+                base_url: self.base_url.as_str(),
+                products,
+                recommended,
+            },
+        ))
     }
 
     async fn product_ctx(&'_ self, id: &str) -> Res<templates::ProductContext<'_>> {

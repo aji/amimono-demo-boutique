@@ -27,6 +27,7 @@ pub struct HomeContext<'svc> {
     pub footer: FooterContext<'svc>,
     pub base_url: &'svc str,
     pub products: Vec<Product>,
+    pub recommended: Vec<Product>,
 }
 
 #[derive(Serialize)]
