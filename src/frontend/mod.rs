@@ -261,11 +261,20 @@ impl FrontendServerData {
 
     async fn product_ctx(&'_ self, id: &str) -> Res<templates::ProductContext<'_>> {
         let product = self.productcatalog.get_product(id.to_string()).await?;
+        // Fetch ads using product categories
+        let mut ads = self
+            .ad
+            .get_ads(product.categories.clone())
+            .await
+            .unwrap_or_default();
+        // Filter out ads that match the current product id
+        ads.retain(|ad| !ad.redirect_url.contains(&product.id));
         Ok(templates::ProductContext {
             header: self.header_ctx().await?,
             footer: self.footer_ctx().await?,
             base_url: self.base_url.as_str(),
             product,
+            ads,
         })
     }
 

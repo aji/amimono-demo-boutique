@@ -36,6 +36,7 @@ pub struct ProductContext<'svc> {
     pub footer: FooterContext<'svc>,
     pub base_url: &'svc str,
     pub product: Product,
+    pub ads: Vec<crate::shared::Ad>,
 }
 
 #[derive(Serialize)]

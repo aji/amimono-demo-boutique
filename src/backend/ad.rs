@@ -22,14 +22,20 @@ pub struct AdService {
 impl AdService {
     fn new() -> AdService {
         let ads_map = {
-            let hairdryer = Ad::new("todo", "Hairdryer for sale. 50% off.");
-            let tank_top = Ad::new("todo", "Tank top for sale. 20% off.");
-            let candle_holder = Ad::new("todo", "Candle holder for sale. 30% off.");
-            let bamboo_glass_jar = Ad::new("todo", "Bamboo glass jar for sale. 10% off.");
-            let watch = Ad::new("todo", "Watch for sale. Buy one, get second kit for free.");
-            let mug = Ad::new("todo", "Mug for sale. Buy two, get third one for free.");
+            let hairdryer = Ad::new("2ZYFJ3GM2N", "Hairdryer for sale. 50% off.");
+            let tank_top = Ad::new("66VCHSJNUP", "Tank top for sale. 20% off.");
+            let candle_holder = Ad::new("0PUK6V6EV0", "Candle holder for sale. 30% off.");
+            let bamboo_glass_jar = Ad::new("9SIQT8TOJO", "Bamboo glass jar for sale. 10% off.");
+            let watch = Ad::new(
+                "1YMWWN1N4O",
+                "Watch for sale. Buy one, get second kit for free.",
+            );
+            let mug = Ad::new(
+                "6E92ZMYYFZ",
+                "Mug for sale. Buy two, get third one for free.",
+            );
             let loafers = Ad::new(
-                "todo",
+                "L9ECAV7KIM",
                 "Loafers for sale. Buy one, get second one for free.",
             );
 

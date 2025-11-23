@@ -8,6 +8,19 @@
     <input type="hidden" name="quantity" value="1" />
     <button type="submit">Add to cart</button>
   </form>
+
+  {{ if ads }}
+  <section class="ads">
+    <h3>Sponsored Ads</h3>
+    <ul>
+      {{ for ad in ads }}
+      <li>
+        <a href="{ad.redirect_url}">{ad.text}</a>
+      </li>
+      {{ endfor }}
+    </ul>
+  </section>
+  {{ endif }}
 </main>
 
 {{ call footer with footer }}
