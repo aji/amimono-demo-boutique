@@ -1,4 +1,8 @@
-use amimono::{config::ComponentConfig, rpc::RpcResult};
+use amimono::{
+    config::ComponentConfig,
+    rpc::{RpcError, RpcResult},
+};
+use amimono_haze::dashboard::tree;
 use serde::{Deserialize, Serialize};
 
 use crate::shared::Product;
@@ -44,7 +48,7 @@ impl ops::Handler for ProductCatalogService {
             .iter()
             .filter(|x| x.id == id)
             .next()
-            .expect("no such product with ID")
+            .ok_or(RpcError::Misc(format!("no such product with ID: {id}")))?
             .clone();
         Ok(res)
     }
@@ -70,4 +74,32 @@ pub type ProductCatalogClient = ops::Client<ProductCatalogService>;
 
 pub fn component() -> ComponentConfig {
     ops::component::<ProductCatalogService>("productcatalogservice".to_owned())
+}
+
+pub struct DashboardDirectory;
+
+impl tree::Directory for DashboardDirectory {
+    async fn list(&self) -> tree::TreeResult<Vec<tree::DirEntry>> {
+        let its = ProductCatalogClient::new()
+            .list_products()
+            .await?
+            .into_iter()
+            .map(|it| tree::DirEntry::item(it.id))
+            .collect();
+        Ok(its)
+    }
+
+    async fn open_dir(&self, _name: &str) -> tree::TreeResult<tree::BoxDirectory> {
+        Err(tree::TreeError::NotFound)
+    }
+
+    async fn open_item(&self, name: &str) -> tree::TreeResult<tree::Item> {
+        let it = ProductCatalogClient::new()
+            .get_product(name.to_owned())
+            .await?;
+        match serde_json::to_string_pretty(&it) {
+            Ok(s) => Ok(tree::Item::new(s)),
+            Err(e) => Err(tree::TreeError::Other(e.to_string())),
+        }
+    }
 }

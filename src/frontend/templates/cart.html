@@ -8,6 +8,12 @@
     {{ for item in items }}
     <li>{item.product_id} x{item.quantity}</li>
     {{ endfor }}
+  </ul>
+  <div>
+    <form method="POST" action="{base_url}/cart/empty">
+      <button type="submit">Empty cart</button>
+    </form>
+  </div>
 </main>
 
 <section>
@@ -46,12 +52,6 @@
     <button type="submit">Checkout</button>
   </form>
 </section>
-</ul>
-<div>
-  <form method="POST" action="{base_url}/cart/empty">
-    <button type="submit">Empty cart</button>
-  </form>
-</div>
 {{ else }}
 <p>Your cart is empty!</p>
 {{ endif }}

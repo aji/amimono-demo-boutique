@@ -26,7 +26,7 @@ pub struct Address {
     pub zip_code: i32,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CartItem {
     pub product_id: String,
     pub quantity: u32,

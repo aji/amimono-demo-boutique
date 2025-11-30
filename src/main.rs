@@ -7,6 +7,7 @@ pub mod shared;
 #[allow(unused)]
 fn configure_strict_monolith() -> AppConfig {
     AppBuilder::new(env!("APP_REVISION"))
+        .install(amimono_haze::installer())
         .add_job(
             JobBuilder::new()
                 .with_label("boutique")
@@ -28,6 +29,7 @@ fn configure_strict_monolith() -> AppConfig {
 #[allow(unused)]
 fn configure_strict_microservices() -> AppConfig {
     AppBuilder::new(env!("APP_REVISION"))
+        .install(amimono_haze::installer())
         .add_job(JobBuilder::new().add_component(frontend::component()))
         .add_job(JobBuilder::new().add_component(backend::ad::component()))
         .add_job(JobBuilder::new().add_component(backend::cart::component()))
@@ -47,5 +49,10 @@ fn configure() -> AppConfig {
 
 fn main() {
     env_logger::init();
+    amimono_haze::dashboard::add_directory("currency", backend::currency::DashboardDirectory);
+    amimono_haze::dashboard::add_directory(
+        "productcatalog",
+        backend::productcatalog::DashboardDirectory,
+    );
     amimono::entry(configure());
 }

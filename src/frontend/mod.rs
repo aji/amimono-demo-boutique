@@ -354,6 +354,7 @@ pub fn component() -> ComponentConfig {
         label: "frontend".to_string(),
         id: FrontendServer::id(),
         binding: BindingType::HttpFixed(8123),
+        is_stateful: false,
         entry: || {
             Box::pin(async {
                 let server = FrontendServer::new().await;

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use amimono::{config::ComponentConfig, rpc::RpcResult};
+use amimono_haze::dashboard::tree;
 
 use crate::shared::Money;
 
@@ -45,15 +46,15 @@ impl ops::Handler for CurrencyService {
         let from_per_euro = self.get_per_euro(&from.currency_code)?;
         let to_per_euro = self.get_per_euro(&to)?;
 
-        let to_per_from = to_per_euro / from_per_euro;
+        let from_nanos = from.units as f64 * 1_000_000_000.0 + from.nanos as f64;
 
-        let to_units = (from.units as f64 * to_per_from) as i64;
-        let to_nanos = (from.nanos as f64 * to_per_from) as i32;
+        let to_units = 0i64;
+        let to_nanos = (from_nanos * to_per_euro / from_per_euro) as i64;
 
         Ok(Money {
             currency_code: to.to_owned(),
-            units: to_units + (to_nanos / 1_000_000_000) as i64,
-            nanos: to_nanos % 1_000_000_000,
+            units: to_units + (to_nanos / 1_000_000_000),
+            nanos: (to_nanos % 1_000_000_000) as i32,
         })
     }
 }
@@ -62,4 +63,43 @@ pub type CurrencyClient = ops::Client<CurrencyService>;
 
 pub fn component() -> ComponentConfig {
     ops::component::<CurrencyService>("currencyservice".to_string())
+}
+
+pub struct DashboardDirectory;
+
+impl tree::Directory for DashboardDirectory {
+    async fn list(&self) -> tree::TreeResult<Vec<tree::DirEntry>> {
+        let res = CurrencyClient::new()
+            .get_supported_currencies()
+            .await?
+            .into_iter()
+            .map(tree::DirEntry::item)
+            .collect();
+        Ok(res)
+    }
+
+    async fn open_dir(&self, _name: &str) -> tree::TreeResult<tree::BoxDirectory> {
+        Err(tree::TreeError::NotFound)
+    }
+
+    async fn open_item(&self, name: &str) -> tree::TreeResult<tree::Item> {
+        let client = CurrencyClient::new();
+
+        let one_in = Money {
+            currency_code: name.to_owned(),
+            units: 1,
+            nanos: 0,
+        };
+        let one_eur = Money {
+            currency_code: "EUR".to_owned(),
+            units: 1,
+            nanos: 0,
+        };
+
+        let as_in = client.convert(one_eur.clone(), name.to_owned()).await?;
+        let as_eur = client.convert(one_in.clone(), "EUR".to_owned()).await?;
+
+        let msg = format!("{one_eur:?} = {as_in:?}\n{one_in:?} = {as_eur:?}");
+        Ok(tree::Item::new(msg))
+    }
 }

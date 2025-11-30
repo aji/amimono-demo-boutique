@@ -1,8 +1,11 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use amimono::{config::ComponentConfig, rpc::RpcResult};
+use amimono_haze::crdt::{
+    Crdt, CrdtClient, StoredCrdt,
+    crdt::{Max, Version},
+};
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
 
 use crate::shared::CartItem;
 
@@ -10,6 +13,42 @@ use crate::shared::CartItem;
 pub struct Cart {
     pub user_id: String,
     pub items: Vec<CartItem>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CartData {
+    items: Version<u32, HashMap<String, Max<u32>>>,
+}
+
+impl Crdt for CartData {
+    fn merge_from(&mut self, other: Self) {
+        self.items.merge_from(other.items);
+    }
+}
+
+impl StoredCrdt for CartData {}
+
+impl Default for CartData {
+    fn default() -> Self {
+        Self {
+            items: Version(0, HashMap::new()),
+        }
+    }
+}
+
+impl CartData {
+    fn to_cart(self, user_id: String) -> Cart {
+        let items = self
+            .items
+            .1
+            .into_iter()
+            .map(|(k, v)| CartItem {
+                product_id: k,
+                quantity: v.0,
+            })
+            .collect();
+        Cart { user_id, items }
+    }
 }
 
 mod ops {
@@ -24,45 +63,42 @@ mod ops {
 }
 
 pub struct CartService {
-    carts: Arc<Mutex<HashMap<String, Vec<CartItem>>>>,
+    crdt: CrdtClient<CartData>,
 }
 
 impl ops::Handler for CartService {
     async fn new() -> CartService {
         CartService {
-            carts: Arc::new(Mutex::new(HashMap::new())),
+            crdt: CrdtClient::new("cart".to_owned()),
         }
     }
 
     async fn add_item(&self, user_id: String, item: CartItem) -> RpcResult<()> {
         log::info!("add_item({}, {})", user_id, item.product_id);
-        self.carts
-            .lock()
-            .await
-            .entry(user_id)
-            .or_insert(Vec::new())
-            .push(item.clone());
+        let cart = {
+            let mut cart = self.crdt.get_or_default(&user_id).await?;
+            let qty = cart.items.1.entry(item.product_id).or_insert(Max(0));
+            qty.0 += item.quantity;
+            cart
+        };
+        self.crdt.put(&user_id, cart).await?;
         Ok(())
     }
 
     async fn get_cart(&self, user_id: String) -> RpcResult<Cart> {
-        log::info!("get_cart({})", user_id);
-        let items = self
-            .carts
-            .lock()
-            .await
-            .get(&user_id)
-            .cloned()
-            .unwrap_or(Vec::new());
-        Ok(Cart {
-            user_id: user_id.to_string(),
-            items,
-        })
+        let cart = self.crdt.get_or_default(&user_id).await?;
+        Ok(cart.to_cart(user_id))
     }
 
     async fn empty_cart(&self, user_id: String) -> RpcResult<()> {
         log::info!("empty_cart({})", user_id);
-        self.carts.lock().await.remove(&user_id);
+        let cart = {
+            let mut cart = self.crdt.get_or_default(&user_id).await?;
+            cart.items.0 += 1;
+            cart.items.1.clear();
+            cart
+        };
+        self.crdt.put(&user_id, cart).await?;
         Ok(())
     }
 }
@@ -70,5 +106,6 @@ impl ops::Handler for CartService {
 pub type CartClient = ops::Client<CartService>;
 
 pub fn component() -> ComponentConfig {
+    CartData::bind("cart");
     ops::component::<CartService>("cartservice".to_owned())
 }
