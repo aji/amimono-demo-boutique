@@ -1,7 +1,7 @@
 use std::{fmt, net::SocketAddr, time::Instant};
 
 use amimono::{
-    config::{Binding, BindingType, ComponentConfig},
+    config::{Binding, ComponentConfig},
     rpc::RpcError,
     runtime::{self, Component},
 };
@@ -25,6 +25,8 @@ type Res<T> = Result<T, FrontendError>;
 
 type Page = Result<(CookieJar, Html<String>), FrontendError>;
 type Post = Result<(CookieJar, Redirect), FrontendError>;
+
+const PORT: u16 = 8123;
 
 #[derive(Debug)]
 enum FrontendError {
@@ -82,10 +84,7 @@ struct FrontendServerData {
 
 impl FrontendServer {
     async fn new() -> FrontendServer {
-        let sock_addr = match runtime::binding::<Self>() {
-            Binding::Http(port) => ([0, 0, 0, 0], port).into(),
-            _ => panic!("FrontendServer does not have a binding"),
-        };
+        let sock_addr = ([0, 0, 0, 0], PORT).into();
         let base_url = match std::env::var("BOUTIQUE_BASE_URL") {
             Ok(url) => url,
             Err(_) => "".to_owned(),
@@ -353,7 +352,7 @@ pub fn component() -> ComponentConfig {
     ComponentConfig {
         label: "frontend".to_string(),
         id: FrontendServer::id(),
-        binding: BindingType::HttpFixed(8123),
+        binding: Binding::Tcp(PORT),
         is_stateful: false,
         entry: || {
             Box::pin(async {
